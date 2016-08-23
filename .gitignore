@@ -47,8 +47,8 @@ qtcreator-*
 CATKIN_IGNORE
 
 # Rest
-.AppleDouble/
-.DS_Store
+*.AppleDouble/
+*.DS_Store
 .catkin_workspace
 .settings/
 devel/
