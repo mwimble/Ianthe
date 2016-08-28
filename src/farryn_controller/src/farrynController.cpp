@@ -13,7 +13,7 @@ int main(int argc, char **argv) {
 	f = boost::bind(&FarrynSkidSteerDrive::configCallback, farrynSkidSteerDrive, _1, _2);
 	server.setCallback(f);
 
-	ROS_INFO("Starting to spin...");
+	ROS_INFO("[farryn_controller] Starting to spin...");
 
 	ros::Rate r(1);
 	float old_batt = 0.0;
@@ -26,7 +26,7 @@ int main(int argc, char **argv) {
 				(old_m1_enc != farrynSkidSteerDrive->getM1Encoder()) ||
 				(old_m2_enc != farrynSkidSteerDrive->getM2Encoder())
 				) {
-				ROS_INFO("[farrynSkidSteerDrive] m1 enc: %d, m2 enc: %d, batt: %f", 
+				ROS_INFO("[farryn_controller] m1 enc: %d, m2 enc: %d, batt: %f", 
 						 farrynSkidSteerDrive->getM1Encoder(),
 						 farrynSkidSteerDrive->getM2Encoder(),
 						 farrynSkidSteerDrive->getLogicBatteryLevel());
@@ -38,9 +38,9 @@ int main(int argc, char **argv) {
 			ros::spinOnce();
 			r.sleep();
 		} catch(FarrynSkidSteerDrive::TRoboClawException* e) {
-			ROS_ERROR("[MAIN] Exception: %s", e->what());
+			ROS_ERROR("[farryn_controller] Exception: %s", e->what());
 		} catch(...) {
-		    ROS_ERROR("[MAIN] Unhangled exception");
+		    ROS_ERROR("[farryn_controller] Unhandled exception");
         }
 	}
 
