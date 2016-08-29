@@ -81,12 +81,12 @@ FarrynSkidSteerDrive::FarrynSkidSteerDrive() :
 	MAX_COMMAND_RETRIES = 5;
 	DEBUG = false;
 
-	M1_P = 226.3538;
-	M2_P = 267.1718;
-	M1_I = 13.35421;
-	M2_I = 14.51053;
-	M1_QPPS = 2810;
-	M2_QPPS = 2512;
+	M1_P = 8908.51572;
+	M2_P = 9960.05140;
+	M1_I = 1038.91467;
+	M2_I = 490.19002;
+	M1_QPPS = 6432;
+	M2_QPPS = 6116;
 	AXLE_WIDTH = 0;
 
 	rosNode = new ros::NodeHandle(); //### namespace
@@ -94,7 +94,7 @@ FarrynSkidSteerDrive::FarrynSkidSteerDrive() :
 	lastTime = ros::Time::now();
 
 	rosNode->param<std::string>("cmd_vel_topic", cmdVelTopic, "/cmd_vel");
-	rosNode->param<std::string>("motor_usb_port", motorUSBPort, "/dev/ttyACM0");
+	rosNode->param<std::string>("motor_usb_port", motorUSBPort, "/dev/roboclaw");
 
     openUsb();
 

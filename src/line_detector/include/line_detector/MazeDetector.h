@@ -25,41 +25,11 @@ public:
 	    std::string toString() const;
 	};
 
-	struct TLINE {
-	public:
-		struct CURVE_FIT {
-			float a;
-			float b;
-			CURVE_FIT(float a_, float b_) : a(a_), b(b_) {}
-		};
-
-		static const int kCapturedMidpoints = 10;
-	    int number;
-	    int lastMidpoints[kCapturedMidpoints];
-	    int midpointIndex;
-	    long sumLengths;
-	    TLINE_DIRECTION dir;
-	    std::vector<TLINE_SEGMENT> lineSegments;
-
-	    static int nextNumber;
-
-	    TLINE();
-
-	    // Return the average length (width) of all the TLINE_SEGMENTs in the collection.
-	    int averageLength() const { return lineSegments.size() == 0 ? 0 : sumLengths / lineSegments.size(); }
-
-	    static const bool debugAddLineElement = false;
-	    void addLineSegment(TLINE_SEGMENT lineSegment);
-
-	    bool isVerticalLine() { return lineSegments.size() > averageLength(); }
-
-	    static const bool debugLinearCurveFit = false;
-		CURVE_FIT linearCurveFit();
-
-	    // Return the average midpoint (x-coordinate) of all the TLINE_SEGMENTs in the collection.
-	    int midpoint() const;
-
-	    std::string toString();
+	struct CURVE_FIT {
+		float a;
+		float b;
+		CURVE_FIT() : a(0.0), b(0.0) {}
+		CURVE_FIT(float a_, float b_) : a(a_), b(b_) {}
 	};
 
 	MazeDetector(cv::VideoCapture videoDevice, double scaleFactor = 1.0);
@@ -70,17 +40,16 @@ public:
 
 	void createControlWindow();
 
-	void detectLines();
+    static const bool debugLinearCurveFit = true;
+	static CURVE_FIT linearCurveFit(std::vector<TLINE_SEGMENT> lineSegments);
 
-	std::vector<TLINE> getHorizontalLines() { return horizontalLines; }
+	void detectLines();
 
 	int getLowHueThreshold() { return lowHueThreshold; }
 
 	cv::Mat getOriginalImage() { return originalImage; }
 
 	cv::Mat getThresholdedImage() { return thresholdedImage; }
-
-	std::vector<TLINE> getVerticalLines() { return verticalLines; }
 
 	bool imageFound() { return imageLoaded; }
 
@@ -101,6 +70,8 @@ public:
 	int verticalLowerLeftY;
 	int verticalUpperRightX;
 	int verticalUpperRightY;
+	CURVE_FIT verticalCurve;
+	CURVE_FIT horizontalCurve;
 	
 private:
 	// Either use a test file name or a video feed.
@@ -120,7 +91,7 @@ private:
 	static const int 		kLowSaturationThreshold = 0;
 	static const int 		kHighSaturationThreshold = 255;
 	static const int 		kLowValueThreshold = 0;
-	static const int 		kHighValueThreshold = 50;
+	static const int 		kHighValueThreshold = 92;
 
 	int			lowHueThreshold;
 	int			highHueThreshold;
@@ -136,12 +107,7 @@ private:
 	// For line detection.
 	static const int kMinimumLineSegmentLength = 15;
 
-	std::vector<TLINE> verticalLines;
-	std::vector<TLINE> horizontalLines;
-
 	void computeVerticalLines();
-	void insertLineSegment(std::vector<TLINE>& arrayOfLines, const TLINE_SEGMENT newLine);
-	bool linesOverlap(const TLINE_SEGMENT l1, TLINE_SEGMENT l2);
 	bool pixelRepresentsALine(uchar pixel) { return pixel == 255; }
 };
 #endif
