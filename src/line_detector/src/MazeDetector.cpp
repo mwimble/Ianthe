@@ -6,6 +6,8 @@
 #include <stdlib.h>
 #include <sys/stat.h>
 
+#include "line_detector/line_detector.h"
+
 using namespace cv;
 using namespace std;
 
@@ -112,9 +114,9 @@ void MazeDetector::detectLines() {
 	} // for (int row)...
 
 	verticalCurve = linearCurveFit(verticalLineSegments);
-	ROS_INFO("[detectLines] verticalLowerLeftX: %d, verticalLowerLeftY: %d, verticalUpperRightX: %d, verticalUpperRightY: %d, w: %d, l: %d",
+	if (DEBUG) ROS_INFO("[detectLines] verticalLowerLeftX: %d, verticalLowerLeftY: %d, verticalUpperRightX: %d, verticalUpperRightY: %d, w: %d, l: %d",
 		verticalLowerLeftX, verticalLowerLeftY, verticalUpperRightX, verticalUpperRightY, verticalUpperRightX - verticalLowerLeftX, verticalLowerLeftY - verticalUpperRightY);
-	ROS_INFO("[detectLines] verticalCurve a: %6.4f, b: %6.4f", verticalCurve.a, verticalCurve.b);
+	if (DEBUG) ROS_INFO("[detectLines] verticalCurve a: %6.4f, b: %6.4f", verticalCurve.a, verticalCurve.b);
 
 	horizontalLowerLeftX = 99999;
 	horizontalLowerLeftY = -1;
@@ -159,9 +161,9 @@ void MazeDetector::detectLines() {
 	} // for (int col)...
 
 	horizontalCurve = linearCurveFit(horizontalLineSegments);
-	ROS_INFO("[detectLines] horizontalLowerLeftX: %d, horizontalLowerLeftY: %d, horizontalUpperRightX: %d, horizontalUpperRightY: %d, w: %d, l: %d",
+	if (DEBUG) ROS_INFO("[detectLines] horizontalLowerLeftX: %d, horizontalLowerLeftY: %d, horizontalUpperRightX: %d, horizontalUpperRightY: %d, w: %d, l: %d",
 		horizontalLowerLeftX, horizontalLowerLeftY, horizontalUpperRightX, horizontalUpperRightY, horizontalLowerLeftY - horizontalUpperRightY, horizontalUpperRightX - horizontalLowerLeftX);
-	ROS_INFO("[detectLines] horizontalCurve a: %6.4f, b: %6.4f", horizontalCurve.a, horizontalCurve.b);
+	if (DEBUG) ROS_INFO("[detectLines] horizontalCurve a: %6.4f, b: %6.4f", horizontalCurve.a, horizontalCurve.b);
 }
 
 void MazeDetector::scaleOriginalImage(double scaleFactor) {
@@ -195,8 +197,8 @@ void MazeDetector::thresholdImage() {
 	dilate(thresholdedImage, thresholdedImage, getStructuringElement(MORPH_ELLIPSE, morphSize));
 
 	// Fill small holes in the background;
-	dilate(thresholdedImage, thresholdedImage, getStructuringElement(MORPH_ELLIPSE, morphSize));
-	erode(thresholdedImage, thresholdedImage, getStructuringElement(MORPH_ELLIPSE, morphSize));
+	// dilate(thresholdedImage, thresholdedImage, getStructuringElement(MORPH_ELLIPSE, morphSize));
+	// erode(thresholdedImage, thresholdedImage, getStructuringElement(MORPH_ELLIPSE, morphSize));
 }
 
 void MazeDetector::updateOriginalImage() {

@@ -1,0 +1,14 @@
+Header header
+int32 horizontalLowerLeftX
+int32 horizontalLowerLeftY
+int32 horizontalUpperRightX
+int32 horizontalUpperRightY
+float64 horizontalCurveA
+float64 horizontalCurveB
+
+int32 verticalLowerLeftX
+int32 verticalLowerLeftY
+int32 verticalUpperRightX
+int32 verticalUpperRightY
+float64 verticalCurveA
+float64 verticalCurveB

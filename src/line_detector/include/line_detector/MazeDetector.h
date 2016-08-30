@@ -40,7 +40,7 @@ public:
 
 	void createControlWindow();
 
-    static const bool debugLinearCurveFit = true;
+    static const bool debugLinearCurveFit = false;
 	static CURVE_FIT linearCurveFit(std::vector<TLINE_SEGMENT> lineSegments);
 
 	void detectLines();

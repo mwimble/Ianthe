@@ -1,0 +1,7 @@
+<launch>
+	<arg name="debug" default="false" />
+	<arg if="$(arg debug)" name="launch_prefix" value="xterm -e gdb --args" />
+	<arg unless="$(arg debug)" name="launch_prefix" value="" />
+	<node pkg="kaimi_imu" name="kaimi_imu" type="kaimi_imu_node" respawn="true" output="screen" launch-prefix="$(arg launch_prefix)" >
+	</node>
+</launch>

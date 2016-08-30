@@ -87,14 +87,14 @@ FarrynSkidSteerDrive::FarrynSkidSteerDrive() :
 	M2_I = 490.19002;
 	M1_QPPS = 6432;
 	M2_QPPS = 6116;
-	AXLE_WIDTH = 0;
+	AXLE_WIDTH = 0.188;
 
 	rosNode = new ros::NodeHandle(); //### namespace
 
 	lastTime = ros::Time::now();
 
 	rosNode->param<std::string>("cmd_vel_topic", cmdVelTopic, "/cmd_vel");
-	rosNode->param<std::string>("motor_usb_port", motorUSBPort, "/dev/roboclaw");
+	rosNode->param<std::string>("motor_usb_port", motorUSBPort, "/dev/ttyACM0");
 
     openUsb();
 
@@ -177,13 +177,13 @@ void FarrynSkidSteerDrive::configCallback(farryn_controller::FarrynConfig &confi
 	if (M2_P != (float) config.M2_P) {
 		M2_P = (float) config.M2_P;
 		ROS_INFO("[FarrynSkidSteerDrive::configCallback] setting new M2_P value: %f", M2_P);
-		setM1PID(M2_P, M2_I, 0, M2_QPPS);
+		setM2PID(M2_P, M2_I, 0, M2_QPPS);
 	}
 
 	if (M2_I != (float) config.M2_I) {
 		M2_I = (float) config.M2_I;
 		ROS_INFO("[FarrynSkidSteerDrive::configCallback] setting new M2_I value: %f", M2_I);
-		setM1PID(M2_P, M2_I, 0, M2_QPPS);
+		setM2PID(M2_P, M2_I, 0, M2_QPPS);
 	}
 
 	if (M2_QPPS != config.M2_QPPS) {
@@ -1140,7 +1140,7 @@ void FarrynSkidSteerDrive::restartUsb() {
 
 void FarrynSkidSteerDrive::setM1PID(float p, float i, float d, uint32_t qpps) {
 	boost::mutex::scoped_lock lock(roboClawLock);
-	ROS_INFO_COND(DEBUG, "-----> [FarrynSkidSteerDrive::setM1PID %X] p: %f, i: %f, d: %f, qpps: %d", gettid(), p, i, d, qpps);
+	ROS_INFO("[FarrynSkidSteerDrive::setM1PID %X] p: %f, i: %f, d: %f, qpps: %d", gettid(), p, i, d, qpps);
 	int retry;
 
 	for (retry = 0; retry < MAX_COMMAND_RETRIES; retry++) {
@@ -1168,7 +1168,7 @@ void FarrynSkidSteerDrive::setM1PID(float p, float i, float d, uint32_t qpps) {
 
 void FarrynSkidSteerDrive::setM2PID(float p, float i, float d, uint32_t qpps) {
 	boost::mutex::scoped_lock lock(roboClawLock);
-	ROS_INFO_COND(DEBUG, "-----> [FarrynSkidSteerDrive::setM2PID %X] p: %f, i: %f, d: %f, qpps: %d", gettid(), p, i, d, qpps);
+	ROS_INFO("[FarrynSkidSteerDrive::setM2PID %X] p: %f, i: %f, d: %f, qpps: %d", gettid(), p, i, d, qpps);
 	int retry;
 
 	for (retry = 0; retry < MAX_COMMAND_RETRIES; retry++) {
@@ -1196,12 +1196,12 @@ void FarrynSkidSteerDrive::setM2PID(float p, float i, float d, uint32_t qpps) {
 
 // Command motors to a given linear and angular velocity
 void FarrynSkidSteerDrive::setVelocities(double v, double w, int32_t* left_qpps, int32_t* right_qpps) {
-    ROS_INFO_COND(DEBUG, "[FarrynSkidSteerDrive::setVelocities %X], v: %f, w: %f, left_qpps: %ld, right_qpps: %ld",
-                  gettid(),
-                  v,
-                  w,
-                  (long int) left_qpps,
-                  (long int) right_qpps);
+    ROS_INFO("[FarrynSkidSteerDrive::setVelocities %X], v: %f, w: %f, left_qpps: %ld, right_qpps: %ld",
+              gettid(),
+              v,
+              w,
+              (long int) left_qpps,
+              (long int) right_qpps);
 	double wmag = fabs(w);
 	double vmag = fabs(v);
 

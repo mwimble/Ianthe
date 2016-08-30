@@ -1,22 +1,18 @@
 cmake_minimum_required(VERSION 2.8.3)
-project(line_detector)
+project(kaimi_imu)
 
-set(CMAKE_BUILD_TYPE Debug)
+SET(FLAGS "-g -ggdb -g3")
 
 ## Find catkin macros and libraries
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
 ## is used, also find other catkin packages
 find_package(catkin REQUIRED COMPONENTS
-	dynamic_reconfigure
-	message_generation
-#  image_transport
-	roscpp
-	rospy
-	sensor_msgs
-	std_msgs
+  dynamic_reconfigure
+  roscpp
+  rospy
+  sensor_msgs
+  std_msgs
 )
-
-find_package( OpenCV REQUIRED)
 
 ## System dependencies are found with CMake's conventions
 # find_package(Boost REQUIRED COMPONENTS system)
@@ -52,10 +48,11 @@ find_package( OpenCV REQUIRED)
 ##   * add every package in MSG_DEP_SET to generate_messages(DEPENDENCIES ...)
 
 ## Generate messages in the 'msg' folder
-add_message_files(
-	FILES
-	line_detector.msg
-)
+# add_message_files(
+#   FILES
+#   Message1.msg
+#   Message2.msg
+# )
 
 ## Generate services in the 'srv' folder
 # add_service_files(
@@ -72,10 +69,10 @@ add_message_files(
 # )
 
 ## Generate added messages and services with any dependencies listed here
-generate_messages(
-	DEPENDENCIES
-	std_msgs
-)
+# generate_messages(
+#   DEPENDENCIES
+#   sensor_msgs#   std_msgs
+# )
 
 ################################################
 ## Declare ROS dynamic reconfigure parameters ##
@@ -107,10 +104,10 @@ generate_messages(
 ## CATKIN_DEPENDS: catkin_packages dependent projects also need
 ## DEPENDS: system dependencies of this project that dependent projects also need
 catkin_package(
-	INCLUDE_DIRS include
-    LIBRARIES line_detector
-	CATKIN_DEPENDS roscpp rospy sensor_msgs std_msgs message_runtime
-	DEPENDS system_lib
+#  INCLUDE_DIRS include
+#  LIBRARIES kaimi_imu
+#  CATKIN_DEPENDS dynamic_reconfigure roscpp rospy sensor_msgs std_msgs
+#  DEPENDS system_lib
 )
 
 ###########
@@ -121,40 +118,40 @@ catkin_package(
 ## Your package locations should be listed before other locations
 # include_directories(include)
 include_directories(
+	include
   ${catkin_INCLUDE_DIRS}
-  include
-  ${OpenCV_INCLUDE_DIRS}
 )
 
 ## Declare a C++ library
-# add_library(line_detector
-#   src/${PROJECT_NAME}/line_detector.cpp
+# add_library(kaimi_imu
+#   src/${PROJECT_NAME}/kaimi_imu.cpp
 # )
 
 ## Add cmake target dependencies of the library
 ## as an example, code may need to be generated before libraries
 ## either from message generation or dynamic reconfigure
-# add_dependencies(line_detector ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+# add_dependencies(kaimi_imu ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 
 ## Declare a C++ executable
 add_executable(
-	line_detector_node 
-	src/line_detector_node.cpp
-	src/MazeDetector.cpp
+	kaimi_imu_node
+	src/kaimi_imu_node.cpp
+	src/I2Cdev.cpp
+	src/MPU6050.cpp
 )
 
 ## Add cmake target dependencies of the executable
 ## same as for the library above
-#add_dependencies(
-#	line_detector_node
-#	${${PROJECT_NAME}_EXPORTED_TARGETS}
-#	${catkin_EXPORTED_TARGETS}
-#)
+add_dependencies(
+	kaimi_imu_node 
+	${${PROJECT_NAME}_EXPORTED_TARGETS} 
+	${catkin_EXPORTED_TARGETS}
+)
 
 ## Specify libraries to link a library or executable target against
-target_link_libraries(line_detector_node
-	${catkin_LIBRARIES}
-	${OpenCV_LIBRARIES}
+target_link_libraries(
+	kaimi_imu_node
+    ${catkin_LIBRARIES}
 )
 
 #############
@@ -172,7 +169,7 @@ target_link_libraries(line_detector_node
 # )
 
 ## Mark executables and/or libraries for installation
-# install(TARGETS line_detector line_detector_node
+# install(TARGETS kaimi_imu kaimi_imu_node
 #   ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
 #   LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
 #   RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
@@ -197,7 +194,7 @@ target_link_libraries(line_detector_node
 #############
 
 ## Add gtest based cpp test target and link libraries
-# catkin_add_gtest(${PROJECT_NAME}-test test/test_line_detector.cpp)
+# catkin_add_gtest(${PROJECT_NAME}-test test/test_kaimi_imu.cpp)
 # if(TARGET ${PROJECT_NAME}-test)
 #   target_link_libraries(${PROJECT_NAME}-test ${PROJECT_NAME})
 # endif()

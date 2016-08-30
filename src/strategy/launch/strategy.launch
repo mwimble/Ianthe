@@ -1,0 +1,8 @@
+<launch>
+	<arg name="doDebug" default="false" />
+	<arg if="$(arg doDebug)" name="launchPrefix" value="xterm -e gdb -args" />
+	<arg unless="$(arg doDebug)" name="launchPrefix" value="" />
+
+	<node pkg="strategy" name="strategy" type="strategy_node" respawn="false" output="screen"  launch-prefix="$(arg launchPrefix)">
+	</node>
+</launch>
