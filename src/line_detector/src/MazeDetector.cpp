@@ -68,8 +68,8 @@ void MazeDetector::detectLines() {
 		throw new std::string("No thresholded image to use");
 	}
 
-	const int minAcceptableLineSize = 35;
-	const int maxAcceptableLineSize = 105;
+	const int minAcceptableLineSize = 35 * scaleFactor;
+	const int maxAcceptableLineSize = 105 * scaleFactor;
 
 	verticalLowerLeftX = 99999;
 	verticalLowerLeftY = -1;
@@ -164,6 +164,13 @@ void MazeDetector::detectLines() {
 	if (DEBUG) ROS_INFO("[detectLines] horizontalLowerLeftX: %d, horizontalLowerLeftY: %d, horizontalUpperRightX: %d, horizontalUpperRightY: %d, w: %d, l: %d",
 		horizontalLowerLeftX, horizontalLowerLeftY, horizontalUpperRightX, horizontalUpperRightY, horizontalLowerLeftY - horizontalUpperRightY, horizontalUpperRightX - horizontalLowerLeftX);
 	if (DEBUG) ROS_INFO("[detectLines] horizontalCurve a: %6.4f, b: %6.4f", horizontalCurve.a, horizontalCurve.b);
+	if (DEBUG) {
+		ros::Time currentTime = ros::Time::now();
+		double secs = currentTime.toSec();
+		char fn[128];
+		sprintf(fn, "%-20.9f.jpg", secs);
+		imwrite(fn, thresholdedImage);
+	}
 }
 
 void MazeDetector::scaleOriginalImage(double scaleFactor) {
