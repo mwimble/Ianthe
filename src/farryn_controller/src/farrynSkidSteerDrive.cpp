@@ -60,7 +60,7 @@ FarrynSkidSteerDrive::FarrynSkidSteerDrive() :
     maxM1Distance(0),
     maxM2Distance(0)
     {
-    ROS_INFO("[FarrynSkidSteerDrive::FarrynSkidSteerDrive %X] constructor", gettid());
+    ROS_INFO_COND(DEBUG, "[FarrynSkidSteerDrive::FarrynSkidSteerDrive %X] constructor", gettid());
 	if (!ros::isInitialized()) {
 		ROS_FATAL_STREAM("[FarrynSkidSteerDrive::FarrynSkidSteerDrive] A ROS Node for FarrynSkidSteerDrive has not been initialized.");
 		throw new TRoboClawException("A ROS Node for FarrynSkidSteerDrive has not been initialized.");
@@ -106,7 +106,7 @@ FarrynSkidSteerDrive::FarrynSkidSteerDrive() :
 
 	setM1PID(M1_P, M1_I, 0, M1_QPPS);
 	setM2PID(M2_P, M2_I, 0, M2_QPPS);
-	ROS_INFO("[FarrynSkidSteerDrive::FarrynSkidSteerDrive] Starting");
+	ROS_INFO_COND(DEBUG, "[FarrynSkidSteerDrive::FarrynSkidSteerDrive] Starting");
 	ROS_INFO("[FarrynSkidSteerDrive::FarrynSkidSteerDrive] getLogicBatteryLevel %f", getLogicBatteryLevel());
 
 	ros::SubscribeOptions so = 
@@ -138,7 +138,7 @@ FarrynSkidSteerDrive::~FarrynSkidSteerDrive() {
 }
 
 void FarrynSkidSteerDrive::cmdVelCallback(const geometry_msgs::Twist::ConstPtr& cmd_msg) {
-	ROS_INFO("[FarrynSkidSteerDrive::cmdVelCallback %X] cmd_msg.linear.x: %f, cmd_msg.angular.z: %f", gettid(), cmd_msg->linear.x, cmd_msg->angular.z);
+	ROS_INFO_COND(DEBUG, "[FarrynSkidSteerDrive::cmdVelCallback %X] cmd_msg.linear.x: %f, cmd_msg.angular.z: %f", gettid(), cmd_msg->linear.x, cmd_msg->angular.z);
 	geometry_msgs::Twist copy;
 	copy.linear.x = cmd_msg->linear.x;
 	copy.angular.z = cmd_msg->angular.z;
@@ -199,10 +199,6 @@ void FarrynSkidSteerDrive::configCallback(farryn_controller::FarrynConfig &confi
 }
 
 void FarrynSkidSteerDrive::drive(float velocity, float angle) {
-//[ INFO] [1445667044.319162594]: [FarrynSkidSteerDrive::cmdVelCallback] cmd_msg.linear.x: -0.500000, cmd_msg.angular.z: 0.000000
-//[DEBUG] [1445667044.319625560]: -----> [FarrynSkidSteerDrive::drive] velocity: -0.500000, angle: 0.000000
-//[ INFO] [1445667044.319889881]: [FarrynSkidSteerDrive::drive] ---- command: 43, drive velocity: -0.5, angle: 0, m1_speed: -4615, m1_max_distance: -768, m2_speed: -4615, m2_max_distance: -768
-
 	boost::mutex::scoped_lock scoped_lock(roboClawLock);
 	ROS_INFO_COND(DEBUG, "-----> [FarrynSkidSteerDrive::drive %X] velocity: %f, angle: %f", gettid(), velocity, angle);
 	int32_t m1_speed;
@@ -222,7 +218,7 @@ void FarrynSkidSteerDrive::drive(float velocity, float angle) {
 
 	int32_t m1_max_distance = m1_abs_speed * MAX_SECONDS_TRAVEL; // Limit travel.
 	int32_t m2_max_distance = m2_abs_speed * MAX_SECONDS_TRAVEL; // Limit travel.
-	ROS_INFO_STREAM("[FarrynSkidSteerDrive::drive " << hex << gettid() << dec << "] ---- command: " << MIXEDSPEEDDIST
+	ROS_INFO_STREAM_COND(DEBUG, "[FarrynSkidSteerDrive::drive " << hex << gettid() << dec << "] ---- command: " << MIXEDSPEEDDIST
 		 << ", drive velocity: " << velocity
 		 << ", angle: " << angle
 		 << ", m1_speed: " << m1_speed
@@ -1140,7 +1136,7 @@ void FarrynSkidSteerDrive::restartUsb() {
 
 void FarrynSkidSteerDrive::setM1PID(float p, float i, float d, uint32_t qpps) {
 	boost::mutex::scoped_lock lock(roboClawLock);
-	ROS_INFO("[FarrynSkidSteerDrive::setM1PID %X] p: %f, i: %f, d: %f, qpps: %d", gettid(), p, i, d, qpps);
+	ROS_INFO_COND(DEBUG, "[FarrynSkidSteerDrive::setM1PID %X] p: %f, i: %f, d: %f, qpps: %d", gettid(), p, i, d, qpps);
 	int retry;
 
 	for (retry = 0; retry < MAX_COMMAND_RETRIES; retry++) {
@@ -1168,7 +1164,7 @@ void FarrynSkidSteerDrive::setM1PID(float p, float i, float d, uint32_t qpps) {
 
 void FarrynSkidSteerDrive::setM2PID(float p, float i, float d, uint32_t qpps) {
 	boost::mutex::scoped_lock lock(roboClawLock);
-	ROS_INFO("[FarrynSkidSteerDrive::setM2PID %X] p: %f, i: %f, d: %f, qpps: %d", gettid(), p, i, d, qpps);
+	ROS_INFO_COND(DEBUG, "[FarrynSkidSteerDrive::setM2PID %X] p: %f, i: %f, d: %f, qpps: %d", gettid(), p, i, d, qpps);
 	int retry;
 
 	for (retry = 0; retry < MAX_COMMAND_RETRIES; retry++) {
@@ -1196,7 +1192,7 @@ void FarrynSkidSteerDrive::setM2PID(float p, float i, float d, uint32_t qpps) {
 
 // Command motors to a given linear and angular velocity
 void FarrynSkidSteerDrive::setVelocities(double v, double w, int32_t* left_qpps, int32_t* right_qpps) {
-    ROS_INFO("[FarrynSkidSteerDrive::setVelocities %X], v: %f, w: %f, left_qpps: %ld, right_qpps: %ld",
+    ROS_INFO_COND(DEBUG, "[FarrynSkidSteerDrive::setVelocities %X], v: %f, w: %f, left_qpps: %ld, right_qpps: %ld",
               gettid(),
               v,
               w,
@@ -1250,7 +1246,7 @@ void FarrynSkidSteerDrive::stop() {
 				SetDWORDval(0),
 				SetDWORDval(0)
 				);
-            ROS_INFO("<----- [FarrynSkidSteerDrive::stop %X]", gettid());
+            ROS_INFO_COND(DEBUG, "<----- [FarrynSkidSteerDrive::stop %X]", gettid());
             expectedM1Speed = 0;
             expectedM2Speed = 0;
             maxM1Distance = 0;
@@ -1268,7 +1264,7 @@ void FarrynSkidSteerDrive::stop() {
 }
 
 void FarrynSkidSteerDrive::updateOdometry() {
-    ROS_INFO("[FarrynSkidSteerDrive::updateOdometry %X] startup", gettid());
+    ROS_INFO_COND(DEBUG, "[FarrynSkidSteerDrive::updateOdometry %X] startup", gettid());
 	ros::Publisher odometryPublisher = rosNode->advertise<nav_msgs::Odometry>("odom", 50);
 	tf::TransformBroadcaster odomBroadcaster;
 

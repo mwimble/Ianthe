@@ -2,6 +2,7 @@
 	<arg name="doDebug" default="false" />
 	<arg if="$(arg doDebug)" name="launchPrefix" value="xterm -e gdb -args" />
 	<arg unless="$(arg doDebug)" name="launchPrefix" value="" />
+	<arg name="save_image" default="false" />
 	<arg name="show_image" default="false" />
 	<node name="line_detector_node" pkg="line_detector"  type="line_detector_node" output="screen" launch-prefix="$(arg launchPrefix)">
 		<param name="show_image" value="$(arg show_image)" type="bool" />
