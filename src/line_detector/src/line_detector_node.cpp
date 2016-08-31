@@ -37,8 +37,10 @@ int main( int argc, char** argv ) {
 	        camera.thresholdImage();
 	        camera.detectLines();
 	        
+	        Size size = camera.getOriginalImage().size();
 	        ros::Time currentTime = ros::Time::now();
 	        line_detector::line_detector ld;
+
 	        ld.horizontalLowerLeftX = camera.horizontalLowerLeftX;
 	        ld.horizontalLowerLeftY = camera.horizontalLowerLeftY;
 	        ld.horizontalUpperRightX = camera.horizontalUpperRightX;
@@ -52,6 +54,18 @@ int main( int argc, char** argv ) {
 	        ld.verticalUpperRightY = camera.verticalUpperRightY;
 	        ld.verticalCurveA = camera.verticalCurve.a;
 	        ld.verticalCurveB = camera.verticalCurve.b;
+
+	        ld.horizontalLeft = camera.horizontalLowerLeftX;
+	        ld.horizontalBottom = (camera.horizontalCurve.b * camera.horizontalLowerLeftX) + camera.horizontalCurve.a;
+	        ld.horizontalLength = camera.horizontalUpperRightX - camera.horizontalLowerLeftX;
+	        ld.horizontalToLeft = camera.horizontalLowerLeftX < int(size.width * 0.25);
+	        ld.horizontalToRight = camera.horizontalUpperRightX > int(size.width * 0.75);
+
+	        ld.verticalBottom = camera.verticalLowerLeftY;
+	        ld.verticalLeft = (camera.verticalCurve.b * camera.verticalLowerLeftY) + camera.verticalCurve.a;
+	        ld.verticalYlength = camera.verticalLowerLeftY - camera.verticalUpperRightY;
+	        ld.verticalToBottom = camera.verticalLowerLeftY > int(size.height * 0.75);
+	        ld.verticalToTop = camera.verticalUpperRightY < (ld.horizontalBottom - 40);
 
 	        ld.header.stamp = currentTime;
 	        detectPublisher.publish(ld);
@@ -73,7 +87,6 @@ int main( int argc, char** argv ) {
 
 		        Scalar axisColor = Scalar(0, 255, 255);
 		        Scalar verticalLineColor = Scalar(0, 136, 255);
-		        Size size = camera.getOriginalImage().size();
 	            cv::line(ti, Point(size.width / 2, size.height), Point (size.width / 2, 0), axisColor, 1, 8);
 	            cv::line(ti, Point(0, size.height / 2), Point(size.width, size.height / 2), axisColor, 1, 8);
 		        cv::line(ti, Point(camera.verticalCurve.b * size.height + camera.verticalCurve.a, size.height), Point(camera.verticalCurve.a, 0), verticalLineColor, 1, 8);

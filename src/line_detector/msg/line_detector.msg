@@ -1,4 +1,17 @@
 Header header
+
+int32 horizontalBottom
+int32 horizontalLeft
+int32 horizontalLength
+bool horizontalToLeft
+bool horizontalToRight
+
+int32 verticalBottom
+int32 verticalLeft
+int32 verticalYlength
+bool verticalToBottom
+bool verticalToTop
+
 int32 horizontalLowerLeftX
 int32 horizontalLowerLeftY
 int32 horizontalUpperRightX
@@ -12,3 +25,4 @@ int32 verticalUpperRightX
 int32 verticalUpperRightY
 float64 verticalCurveA
 float64 verticalCurveB
+
