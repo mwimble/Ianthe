@@ -3,6 +3,19 @@
 	<arg if="$(arg doDebug)" name="launchPrefix" value="xterm -e gdb -args" />
 	<arg unless="$(arg doDebug)" name="launchPrefix" value="" />
 
+	<arg name="cmd_vel_topic_name" default="/cmd_vel" />
+	<arg name="debug_goto_crossing" default="true" />
+	<arg name="line_detector_topic_name" default="/lineDetect" />
+	<arg name="show_image" default="true" />
+
+	<include file="$(find farryn_controller)launch/farryn.launch" />
+	<include file="$(find kaimi_imu)launch/kaimi_imu.launch.xml" />
+	<include file="$(find line_detector)launch/line_detector.launch" />
+
 	<node pkg="strategy" name="strategy" type="strategy_node" respawn="false" output="screen"  launch-prefix="$(arg launchPrefix)">
+		<param name="cmd_vel_topic_name" value="$(arg cmd_vel_topic_name)" type="string" />
+		<param name="debug_goto_crossing" value="$(arg debug_goto_crossing)" type="bool" />
+		<param name="line_detector_topic_name" value="$(arg line_detector_topic_name)" type="string" />
+		<param name="show_image" value="$(arg show_image)" type="bool" />
 	</node>
 </launch>

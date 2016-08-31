@@ -14,8 +14,8 @@ using namespace std;
 bool DEBUG = false;
 
 void handleControlChange(int newValue, void* userData) {
-	MazeDetector* camera = (MazeDetector*) userData;
-	cout << "New Value" << newValue << ", low hue value: " << camera->getLowHueThreshold() << endl;
+	// MazeDetector* camera = (MazeDetector*) userData;
+	// cout << "New Value" << newValue << ", low hue value: " << camera->getLowHueThreshold() << endl;
 }
 
 MazeDetector::MazeDetector(VideoCapture videoDevice, double scaleFactor)

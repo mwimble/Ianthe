@@ -1,6 +1,8 @@
 cmake_minimum_required(VERSION 2.8.3)
 project(strategy)
 
+set(CMAKE_BUILD_TYPE Debug)
+
 ## Find catkin macros and libraries
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
 ## is used, also find other catkin packages
@@ -9,7 +11,6 @@ find_package(catkin REQUIRED COMPONENTS
   geometry_msgs
   roscpp
   rospy
-  rosserial_msgs
   std_msgs
 )
 
@@ -110,7 +111,6 @@ catkin_package(
 	geometry_msgs
 	roscpp
 	rospy
-	rosserial_msgs
 	std_msgs
 	DEPENDS system_lib
 )
@@ -139,6 +139,7 @@ include_directories(
 
 ## Declare a C++ executable
 add_executable(strategy_node
+	src/GotoCrossing.cpp
 	src/SolveMaze.cpp
 	src/StrategyContext.cpp
 	src/StrategyFn.cpp

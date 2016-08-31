@@ -58,7 +58,7 @@ int main(int argc, char** argv) {
 		if (fifoCount == 1024) {
 			// Reset so we can continue cleanly.
 			mpu.resetFIFO();
-			ROS_INFO("[kaimi_imu] FIFO overflow!");
+			//ROS_INFO("[kaimi_imu] FIFO overflow!");
 		} else if (fifoCount >= 42) {
 			// Read a packet from the FIFO.
 			mpu.getFIFOBytes(fifoBuffer, packetSize);

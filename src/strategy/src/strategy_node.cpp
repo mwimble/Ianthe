@@ -1,6 +1,7 @@
 #include <ros/ros.h>
 #include <ros/console.h>
 
+#include "strategy/GotoCrossing.h"
 #include "strategy/SolveMaze.h"
 #include "strategy/StrategyContext.h"
 #include "strategy/StrategyException.h"
@@ -26,6 +27,7 @@ int main(int argc, char** argv) {
 
 	ros::Rate rate(40); // Loop rate
 
+	behaviors.push_back(&GotoCrossing::Singleton());
 	//#####behaviors.push_back(&IsHealthy::Singleton());
 	// behaviors.push_back(&FetchPrecachedSample::Singleton());
 	// behaviors.push_back(&GoHome::Singleton());
@@ -43,17 +45,17 @@ int main(int argc, char** argv) {
 				//ROS_INFO_STREAM("[_strategy_node] called tick for '" << ((*it)->name()) << " with result: " << result);
 				if (result == StrategyFn::RESTART_LOOP) {
 					//ROS_INFO_STREAM("[_strategy_node] function: " << ((*it)->name()) << ", RESTART_LOOP result, restarting");
-					throw new StrategyException("RESTART_LOOP");
+					break; // throw new StrategyException("RESTART_LOOP");
 				}
 
 				if (result == StrategyFn::FATAL) {
-					//ROS_INFO_STREAM("[_strategy_node] function: " << ((*it)->name()) << ", FATAL result, exiting");
+					ROS_INFO_STREAM("[_strategy_node] function: " << ((*it)->name()) << ", FATAL result, exiting");
 					return -1;
 				}
 
 				if (result == StrategyFn::RUNNING) {
 					//ROS_INFO_STREAM("[_strategy_node] function " << ((*it)->name()) << ", RUNNING, restarting");
-					throw new StrategyException("RESTART_LOOP");
+					break; // throw new StrategyException("RESTART_LOOP");
 				}
 
 				if (result == StrategyFn::SUCCESS) {
@@ -62,7 +64,7 @@ int main(int argc, char** argv) {
 				}
 
 				if (result == StrategyFn::FAILED) {
-					//ROS_INFO_STREAM("[_strategy_node] function: " << ((*it)->name()) << ", FAILED result, aborting");
+					ROS_INFO_STREAM("[_strategy_node] function: " << ((*it)->name()) << ", FAILED result, aborting");
 					break;
 				}
 			}

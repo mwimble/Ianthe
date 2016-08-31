@@ -91,7 +91,7 @@ private:
 	static const int 		kLowSaturationThreshold = 0;
 	static const int 		kHighSaturationThreshold = 255;
 	static const int 		kLowValueThreshold = 0;
-	static const int 		kHighValueThreshold = 92;
+	static const int 		kHighValueThreshold = 50;
 
 	int			lowHueThreshold;
 	int			highHueThreshold;
