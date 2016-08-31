@@ -13,13 +13,25 @@ private:
 	static const int kMIN_HORIZONTAL_LINE_WIDTH = 15;
 	static const int kMIN_HORIZONTAL_LINE_LENGTH = 160;
 	static const string strategyHasntStarted;
-	static const string strategyLookingForLine;
+	static const string strategyLookingForHorizontalLineEnd;
+	static const string strategyLookingForHorizontalLineStart;
+	static const string strategySuccess;
+
+	typedef enum {
+		kLOOKING_FOR_HORIZONTAL_LINE_START,
+		kLOOKING_FOR_HORIZONTAL_LINE_END
+	} STATE;
+
+	STATE state;
 
 	// For moving to a crossing line.
 	int horizontalLineWidth;
 	int horizontalLineY;
 	int horizontalLineLength;
+
 	bool horizontalLineFound;
+	bool verticalLineFound;
+	bool sawHorizontalLine;
 
 
 	// Positioned at a turning line?
@@ -33,6 +45,9 @@ private:
 
 	// Topic name containing cmd_vel message.
 	string cmdVelTopicName_;
+
+	// Topic to publish current strategy.
+	ros::Publisher currentStrategyPub_;
 
 	// Subscriber to line_detector message.
 	ros::Subscriber lineDetectorSub_;
