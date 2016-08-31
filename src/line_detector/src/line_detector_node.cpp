@@ -15,7 +15,7 @@ bool showImage = false;
 
 int main( int argc, char** argv ) {
 	ros::init(argc, argv, "line_detector_node");
-	ros::param::param<bool>("show_image", showImage, "false");
+	ros::param::param<bool>("/line_detector_node/show_image", showImage, "false");
 	ROS_INFO("[line_detector_node] PARAM show_image: %s", showImage ? "TRUE" : "true");
 	ros::NodeHandle nh_;
 	ros::Publisher detectPublisher = nh_.advertise<line_detector::line_detector>("/lineDetect", 1);

@@ -40,7 +40,7 @@ public:
 
 	void createControlWindow();
 
-    static const bool debugLinearCurveFit = false;
+    static const bool debug_LinearCurveFit = false;
 	static CURVE_FIT linearCurveFit(std::vector<TLINE_SEGMENT> lineSegments);
 
 	void detectLines();
@@ -74,6 +74,9 @@ public:
 	CURVE_FIT horizontalCurve;
 	
 private:
+	bool debug_;
+	bool saveImage;
+
 	// Either use a test file name or a video feed.
 	std::string fileName;
 	cv::VideoCapture videoFeed;

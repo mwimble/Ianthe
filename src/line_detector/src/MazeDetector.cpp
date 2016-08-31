@@ -11,8 +11,6 @@
 using namespace cv;
 using namespace std;
 
-bool DEBUG = false;
-bool saveImage = false;
 
 void handleControlChange(int newValue, void* userData) {
 	// MazeDetector* camera = (MazeDetector*) userData;
@@ -21,9 +19,9 @@ void handleControlChange(int newValue, void* userData) {
 
 MazeDetector::MazeDetector(VideoCapture videoDevice, double scaleFactor)
 	: imageLoaded(false), morphSize(5,5), scaleFactor(scaleFactor) {
-	ros::param::param<bool>("doDebug", DEBUG, "false");
-	ROS_INFO("[MazeDetector] PARAM doDebug: %s", DEBUG ? "TRUE" : "false");
-	ros::param::param<bool>("save_image", saveImage, "false");
+	ros::param::param<bool>("/line_detector_node/debug", debug_, "false");
+	ROS_INFO("[MazeDetector] PARAM dodebug_: %s", debug_ ? "TRUE" : "false");
+	ros::param::param<bool>("/line_detector_node/save_image", saveImage, "false");
 	ROS_INFO("[MazeDetector] PARAM save_image: %s", saveImage ? "TRUE" : "false");
 	controlWindowName = "Ewyn Camera Controls";
 	setDefaultThresholding();
@@ -119,9 +117,9 @@ void MazeDetector::detectLines() {
 	} // for (int row)...
 
 	verticalCurve = linearCurveFit(verticalLineSegments);
-	if (DEBUG) ROS_INFO("[detectLines] verticalLowerLeftX: %d, verticalLowerLeftY: %d, verticalUpperRightX: %d, verticalUpperRightY: %d, w: %d, l: %d",
+	if (debug_) ROS_INFO("[detectLines] verticalLowerLeftX: %d, verticalLowerLeftY: %d, verticalUpperRightX: %d, verticalUpperRightY: %d, w: %d, l: %d",
 		verticalLowerLeftX, verticalLowerLeftY, verticalUpperRightX, verticalUpperRightY, verticalUpperRightX - verticalLowerLeftX, verticalLowerLeftY - verticalUpperRightY);
-	if (DEBUG) ROS_INFO("[detectLines] verticalCurve a: %6.4f, b: %6.4f", verticalCurve.a, verticalCurve.b);
+	if (debug_) ROS_INFO("[detectLines] verticalCurve a: %6.4f, b: %6.4f", verticalCurve.a, verticalCurve.b);
 
 	horizontalLowerLeftX = 99999;
 	horizontalLowerLeftY = -1;
@@ -166,9 +164,9 @@ void MazeDetector::detectLines() {
 	} // for (int col)...
 
 	horizontalCurve = linearCurveFit(horizontalLineSegments);
-	if (DEBUG) ROS_INFO("[detectLines] horizontalLowerLeftX: %d, horizontalLowerLeftY: %d, horizontalUpperRightX: %d, horizontalUpperRightY: %d, w: %d, l: %d",
+	if (debug_) ROS_INFO("[detectLines] horizontalLowerLeftX: %d, horizontalLowerLeftY: %d, horizontalUpperRightX: %d, horizontalUpperRightY: %d, w: %d, l: %d",
 		horizontalLowerLeftX, horizontalLowerLeftY, horizontalUpperRightX, horizontalUpperRightY, horizontalLowerLeftY - horizontalUpperRightY, horizontalUpperRightX - horizontalLowerLeftX);
-	if (DEBUG) ROS_INFO("[detectLines] horizontalCurve a: %6.4f, b: %6.4f", horizontalCurve.a, horizontalCurve.b);
+	if (debug_) ROS_INFO("[detectLines] horizontalCurve a: %6.4f, b: %6.4f", horizontalCurve.a, horizontalCurve.b);
 	if (saveImage) {
 		ros::Time currentTime = ros::Time::now();
 		double secs = currentTime.toSec();
@@ -250,7 +248,7 @@ MazeDetector::CURVE_FIT MazeDetector::linearCurveFit(std::vector<TLINE_SEGMENT> 
         sumx2 = sumx2 + x * x;
         sumy = sumy + y;
         sumxy = sumxy + x * y;
-//        if (debugLinearCurveFit) { cout << x << "\t" << y << endl; }
+//        if (debug_LinearCurveFit) { cout << x << "\t" << y << endl; }
     }
 
     float t1 = sumx2 * sumy;
@@ -261,7 +259,7 @@ MazeDetector::CURVE_FIT MazeDetector::linearCurveFit(std::vector<TLINE_SEGMENT> 
     float denom = t3 - t4;
     float a = num / denom;
     float b = ((n * sumxy) - (sumx * sumy)) / ((n * sumx2) - (sumx * sumx));
-    if (debugLinearCurveFit) {
+    if (debug_LinearCurveFit) {
         cout << "n: " << n 
         	 << ", sumx: " << sumx
         	 << ", sumx2: " << sumx2
