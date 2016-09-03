@@ -67,6 +67,7 @@ void Rotate::publishCurrentStragety(string strategy) {
 
 StrategyFn::RESULT_T Rotate::tick() {
 	RESULT_T result = FATAL;
+	bool keepRotating = false;
 	geometry_msgs::Twist cmdVel;
 
 	if (!strategyContext.needToRotateLeft180 && !strategyContext.needToRotateRight180) {
@@ -100,7 +101,13 @@ StrategyFn::RESULT_T Rotate::tick() {
 			break;
 
 		case kROTATING_LEFT:
-			if (yaw_ < goalYaw_) {
+			if (startYaw_ > goalYaw_) {
+				keepRotating = (yaw_ > (goalYaw_ + 10)) || (yaw_ < goalYaw_);
+			} else {
+				keepRotating = yaw_ < goalYaw_;
+			}
+
+			if (keepRotating) {
 				cmdVel.linear.x = 0.0;
 				cmdVel.linear.z = 1.0;
 				cmdVelPub_.publish(cmdVel);
@@ -122,7 +129,13 @@ StrategyFn::RESULT_T Rotate::tick() {
 			break;
 
 		case kROTATING_RIGHT:
-			if (yaw_ > goalYaw_) {
+			if (startYaw_ < goalYaw_) {
+				keepRotating = (yaw_ < (goalYaw_ - 10)) || (yaw_ > goalYaw_);
+			} else {
+				keepRotating = yaw_ > goalYaw_;
+			}
+
+			if (keepRotating) {
 				cmdVel.linear.x = 0.0;
 				cmdVel.linear.z = -1.0;
 				cmdVelPub_.publish(cmdVel);
