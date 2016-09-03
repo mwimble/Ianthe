@@ -77,6 +77,8 @@ private:
 	bool debug_;
 	bool saveImage;
 
+	ros::NodeHandle nh_;
+
 	// Either use a test file name or a video feed.
 	std::string fileName;
 	cv::VideoCapture videoFeed;

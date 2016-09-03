@@ -6,6 +6,7 @@
 #include "line_detector/line_detector.h"
 #include "strategy/StrategyContext.h"
 #include "strategy/StrategyFn.h"
+#include <string>
 
 class GotoCrossing : public StrategyFn {
 private:
@@ -32,6 +33,10 @@ private:
 	bool horizontalLineFound;
 	bool verticalLineFound;
 	bool sawHorizontalLine;
+
+	bool horizontalToLeft;
+	bool horizontalToRight;
+	bool lineDetectorMsgReceived;
 
 
 	// Positioned at a turning line?
@@ -65,6 +70,7 @@ private:
 
 	GotoCrossing();
 
+	// Process line_detector messages.
 	void lineDetectorTopicCb(const line_detector::line_detector& msg);
 
 	// Publish current strategy (if changed).

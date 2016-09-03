@@ -72,7 +72,9 @@ int main(int argc, char** argv) {
 			// float ypr[3];
 			// mpu.dmpGetGravity(&gravity, &q);
 			// mpu.dmpGetYawPitchRoll(ypr, &q, &gravity);
-			// ROS_INFO("ypr  %7.2f %7.2f %7.2f    ", ypr[0] * 180/M_PI, ypr[1] * 180/M_PI, ypr[2] * 180/M_PI);
+			// ROS_INFO("ypr  %7.2f %7.2f %7.2f  || w: %f, z: %f, y: %f, x: %f  ", 
+			// 		  ypr[0] * 180/M_PI, ypr[1] * 180/M_PI, ypr[2] * 180/M_PI,
+			// 		  imu.orientation.w, imu.orientation.z, imu.orientation.y, imu.orientation.x);
 
 			mpu.dmpGetAccel(&aa, fifoBuffer);
 			mpu.dmpGetGravity(&gravity, &q);

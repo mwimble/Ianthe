@@ -10,18 +10,20 @@ using namespace std;
 GotoCrossing::GotoCrossing() :
 	atLine_(false), 
 	debug_(false), 
-	horizontalLineFound(false), 
+	horizontalLineFound(false),
+	lineDetectorMsgReceived(false),
 	sawHorizontalLine(false),
 	state(kLOOKING_FOR_HORIZONTAL_LINE_START),
 	verticalLineFound(false) {
 
-	ros::param::param<std::string>("cmd_vel_topic_name", cmdVelTopicName_, "/cmd_vel");
+	nh_ = ros::NodeHandle("~");
+	nh_.getParam("cmd_vel_topic_name", cmdVelTopicName_);
 	ROS_INFO("[GotoCrossing] PARAM cmd_vel_topic_name: %s", cmdVelTopicName_.c_str());
 
-	ros::param::param<bool>("debug_goto_crossing", debug_, "false");
+	nh_.getParam("debug_goto_crossing", debug_);
 	ROS_INFO("[GotoCrossing] PARAM debug_goto_crossing: %s", debug_ ? "TRUE" : "false");
 
-	ros::param::param<std::string>("line_detector_topic_name", lineDetectorTopicName_, "/lineDetect");
+	nh_.getParam("line_detector_topic_name", lineDetectorTopicName_);
 	ROS_INFO("[GotoCrossing] PARAM line_detector_topic_name: %s", lineDetectorTopicName_.c_str());
 
 	currentStrategyPub_ = nh_.advertise<std_msgs::String>("current_stragety", 1, true /* latched */);
@@ -36,25 +38,18 @@ GotoCrossing& GotoCrossing::Singleton() {
 }
 
 void GotoCrossing::lineDetectorTopicCb(const line_detector::line_detector& msg) {
-	// horizontalLineWidth = (msg.horizontalLowerLeftY - msg.horizontalUpperRightY) / 2;
-	// horizontalLineY = msg.horizontalUpperRightY + horizontalLineWidth;
-	// horizontalLineLength = msg.horizontalUpperRightX - msg.horizontalLowerLeftX;
-	// horizontalLineFound = (horizontalLineWidth >= kMIN_HORIZONTAL_LINE_WIDTH) &&
-	//                       (horizontalLineWidth <= kMAX_HORIZONTAL_LINE_WIDTH) &&
-	//                       (horizontalLineLength >= kMIN_HORIZONTAL_LINE_LENGTH);
-	// if (debug_) {
-	// 	ROS_INFO("[GotoCrossing] horizontalLineFound: %s, horizontalLineY: %d, horizontalLineWidth: %d, horizontalLineLength: %d, llx: %d, lly: %d, urx: %d, ury: %d",
-	// 	         horizontalLineFound ? "TRUE" : "false",
-	// 	         horizontalLineY,
-	// 	         horizontalLineWidth,
-	// 	         horizontalLineLength,
-	// 	         msg.horizontalLowerLeftX,
-	// 	         msg.horizontalLowerLeftY,
-	// 	         msg.horizontalUpperRightX,
-	// 	         msg.horizontalUpperRightY);
-	// }
 	horizontalLineFound = msg.horizontalToLeft || msg.horizontalToRight;
+	horizontalToLeft = msg.horizontalToLeft;
+	horizontalToRight = msg.horizontalToRight;
 	verticalLineFound = msg.verticalToBottom;
+	lineDetectorMsgReceived = true;
+	if (debug_) {
+		ROS_INFO("[GotoCrossing] toLeft: %s, toRight: %s, (hb: %d, hl: %d, len: %d), up: %s, down: %s (vb: %d, vl: %d, len: %d)",
+			msg.horizontalToLeft ? "TRUE" : "false", msg.horizontalToRight ? "TRUE" : "false",
+			msg.horizontalBottom, msg.horizontalLeft, msg.horizontalLength,
+			msg.verticalToTop ? "TRUE" : "false", msg.verticalToBottom ? "TRUE" : "false",
+			msg.verticalBottom, msg.verticalLeft, msg.verticalYlength);
+	}
 }
 
 string GotoCrossing::name() {
@@ -75,14 +70,33 @@ StrategyFn::RESULT_T GotoCrossing::tick() {
 	RESULT_T result = FATAL;
 	geometry_msgs::Twist cmdVel;
 
+	if (!strategyContext.needToFollowLine) {
+		if (debug_) {
+			ROS_INFO("[GotoCrossing] no needToFollowLine");
+		}
+
+		result = SUCCESS;
+		return result;
+	}
+
+	if (debug_) {
+		ROS_INFO("[GotoCrossing] state: %s, verticalLineFound: %s, sawHorizontalLine: %s",
+			state == kLOOKING_FOR_HORIZONTAL_LINE_START ? "kLOOKING_FOR_HORIZONTAL_LINE_START" : "kLOOKING_FOR_HORIZONTAL_LINE_END",
+			verticalLineFound ? "TRUE" : "false",
+			sawHorizontalLine ? "TRUE" : "false");
+	}
+
 	switch (state) {
 		case kLOOKING_FOR_HORIZONTAL_LINE_START:
 			publishCurrentStragety(strategyLookingForHorizontalLineStart);
 			if (!verticalLineFound) {
-				ROS_INFO("[GotoCrossing] Vertical line not found");
-				result = FAILED;
-			} else if (sawHorizontalLine) {
+				if (debug_) ROS_INFO("[GotoCrossing] Vertical line not found");
+				result = RUNNING;
+			} else if (horizontalLineFound) {
 				state = kLOOKING_FOR_HORIZONTAL_LINE_END;
+				strategyContext.needToRotateLeft180 = horizontalToLeft;
+				strategyContext.needToRotateRight180 = horizontalToRight;
+				sawHorizontalLine = true;
 				// Move until not found horizontal line.
 				cmdVel.linear.x = 0.1;
 				cmdVel.linear.z = 0.0;
@@ -99,24 +113,25 @@ StrategyFn::RESULT_T GotoCrossing::tick() {
 
 			break;
 
-		kLOOKING_FOR_HORIZONTAL_LINE_END:
+		case kLOOKING_FOR_HORIZONTAL_LINE_END:
 			publishCurrentStragety(strategyLookingForHorizontalLineEnd);
-			if (!sawHorizontalLine) {
+			if (horizontalLineFound) {
 				// Move until no longer see horizontal line.
-				geometry_msgs::Twist cmdVel;
 				cmdVel.linear.x = 0.1;
 				cmdVel.linear.z = 0.0;
 				cmdVelPub_.publish(cmdVel);
+				strategyContext.needToRotateLeft180 |= horizontalToLeft;
+				strategyContext.needToRotateRight180 |= horizontalToRight;
 				result = RUNNING;
 			} else {
 				// Done.
 				publishCurrentStragety(strategySuccess);
 				// Stop.
-				geometry_msgs::Twist cmdVel;
 				cmdVel.linear.x = 0.0;
 				cmdVel.linear.z = 0.0;
 				cmdVelPub_.publish(cmdVel);
 				result = SUCCESS;
+				strategyContext.needToFollowLine = false;
 			}
 
 			break;

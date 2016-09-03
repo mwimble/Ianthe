@@ -19,9 +19,10 @@ void handleControlChange(int newValue, void* userData) {
 
 MazeDetector::MazeDetector(VideoCapture videoDevice, double scaleFactor)
 	: imageLoaded(false), morphSize(5,5), scaleFactor(scaleFactor) {
-	ros::param::param<bool>("/line_detector_node/debug", debug_, "false");
-	ROS_INFO("[MazeDetector] PARAM dodebug_: %s", debug_ ? "TRUE" : "false");
-	ros::param::param<bool>("/line_detector_node/save_image", saveImage, "false");
+	nh_ = ros::NodeHandle("~");
+	nh_.getParam("debug", debug_);
+	ROS_INFO("[MazeDetector] PARAM debug: %s", debug_ ? "TRUE" : "false");
+	nh_.getParam("save_image", saveImage);
 	ROS_INFO("[MazeDetector] PARAM save_image: %s", saveImage ? "TRUE" : "false");
 	controlWindowName = "Ewyn Camera Controls";
 	setDefaultThresholding();
@@ -117,9 +118,9 @@ void MazeDetector::detectLines() {
 	} // for (int row)...
 
 	verticalCurve = linearCurveFit(verticalLineSegments);
-	if (debug_) ROS_INFO("[detectLines] verticalLowerLeftX: %d, verticalLowerLeftY: %d, verticalUpperRightX: %d, verticalUpperRightY: %d, w: %d, l: %d",
+	if (debug_) ROS_INFO("[MazeDetector] verticalLowerLeftX: %d, verticalLowerLeftY: %d, verticalUpperRightX: %d, verticalUpperRightY: %d, w: %d, l: %d",
 		verticalLowerLeftX, verticalLowerLeftY, verticalUpperRightX, verticalUpperRightY, verticalUpperRightX - verticalLowerLeftX, verticalLowerLeftY - verticalUpperRightY);
-	if (debug_) ROS_INFO("[detectLines] verticalCurve a: %6.4f, b: %6.4f", verticalCurve.a, verticalCurve.b);
+	if (debug_) ROS_INFO("[MazeDetector] verticalCurve a: %6.4f, b: %6.4f", verticalCurve.a, verticalCurve.b);
 
 	horizontalLowerLeftX = 99999;
 	horizontalLowerLeftY = -1;
@@ -164,9 +165,9 @@ void MazeDetector::detectLines() {
 	} // for (int col)...
 
 	horizontalCurve = linearCurveFit(horizontalLineSegments);
-	if (debug_) ROS_INFO("[detectLines] horizontalLowerLeftX: %d, horizontalLowerLeftY: %d, horizontalUpperRightX: %d, horizontalUpperRightY: %d, w: %d, l: %d",
+	if (debug_) ROS_INFO("[MazeDetector] horizontalLowerLeftX: %d, horizontalLowerLeftY: %d, horizontalUpperRightX: %d, horizontalUpperRightY: %d, w: %d, l: %d",
 		horizontalLowerLeftX, horizontalLowerLeftY, horizontalUpperRightX, horizontalUpperRightY, horizontalLowerLeftY - horizontalUpperRightY, horizontalUpperRightX - horizontalLowerLeftX);
-	if (debug_) ROS_INFO("[detectLines] horizontalCurve a: %6.4f, b: %6.4f", horizontalCurve.a, horizontalCurve.b);
+	if (debug_) ROS_INFO("[MazeDetector] horizontalCurve a: %6.4f, b: %6.4f", horizontalCurve.a, horizontalCurve.b);
 	if (saveImage) {
 		ros::Time currentTime = ros::Time::now();
 		double secs = currentTime.toSec();

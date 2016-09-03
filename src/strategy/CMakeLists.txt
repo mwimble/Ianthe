@@ -140,6 +140,7 @@ include_directories(
 ## Declare a C++ executable
 add_executable(strategy_node
 	src/GotoCrossing.cpp
+	src/Rotate.cpp
 	src/SolveMaze.cpp
 	src/StrategyContext.cpp
 	src/StrategyFn.cpp

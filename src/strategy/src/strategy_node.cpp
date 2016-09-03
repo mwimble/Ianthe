@@ -2,6 +2,7 @@
 #include <ros/console.h>
 
 #include "strategy/GotoCrossing.h"
+#include "strategy/Rotate.h"
 #include "strategy/SolveMaze.h"
 #include "strategy/StrategyContext.h"
 #include "strategy/StrategyException.h"
@@ -28,9 +29,7 @@ int main(int argc, char** argv) {
 	ros::Rate rate(40); // Loop rate
 
 	behaviors.push_back(&GotoCrossing::Singleton());
-	//#####behaviors.push_back(&IsHealthy::Singleton());
-	// behaviors.push_back(&FetchPrecachedSample::Singleton());
-	// behaviors.push_back(&GoHome::Singleton());
+	behaviors.push_back(&Rotate::Singleton());
 
 	strategyContext.atGoal = false;
 

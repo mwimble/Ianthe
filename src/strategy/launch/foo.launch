@@ -1,0 +1,19 @@
+<launch>
+	<arg name="doDebug" default="false" />
+	<arg if="$(arg doDebug)" name="launchPrefix" value="xterm -e gdb -args" />
+	<arg unless="$(arg doDebug)" name="launchPrefix" value="" />
+
+	<arg name="cmd_vel_topic_name" default="/cmd_vel" />
+	<arg name="debug_goto_crossing" default="true" />
+	<arg name="debug_line_detector" default="true" />
+	<arg name="debug_rotate" default="true" />
+	<arg name="imu_topic_name" default="/imu" />
+	<arg name="line_detector_topic_name" default="/lineDetect" />
+	<arg name="show_image" default="true" />
+
+	<include file="$(find line_detector)launch/line_detector.launch" >
+		<arg name="foo" default="bar" />
+		<arg name="debug_line_detector" value="$(arg debug_line_detector)" />
+		<arg name="show_image" value="$(arg show_image)" />
+	</include>
+</launch>
