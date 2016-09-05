@@ -95,6 +95,12 @@ int main( int argc, char** argv ) {
 		        cv::line(ti, Point(camera.verticalCurve.b * size.height + camera.verticalCurve.a, size.height), Point(camera.verticalCurve.a, 0), verticalLineColor, 1, 8);
 		        cv::line(ti, Point(0, camera.horizontalCurve.a), Point(size.width, camera.horizontalCurve.b * size.width + camera.horizontalCurve.a), verticalLineColor, 1, 8);
 	
+		        if (showImage) {
+			        imshow("Original Image", camera.getOriginalImage());
+			        imshow("Thresholded Image", camera.getThresholdedImage());
+			        if (waitKey(3) == 27) { return 0; }
+			    }
+
 				if (saveImages) {
 					ros::Time currentTime = ros::Time::now();
 					double secs = currentTime.toSec();
@@ -102,12 +108,6 @@ int main( int argc, char** argv ) {
 					sprintf(fn, "/home/pi/images/%-20.9f.jpg", secs);
 					imwrite(fn, camera.getOriginalImage());
 				}
-
-		        if (showImage) {
-			        imshow("Original Image", camera.getOriginalImage());
-			        imshow("Thresholded Image", camera.getThresholdedImage());
-			        //if (waitKey(30) == 27) { return 0; }
-			    }
 		    }
 
 			ros::spinOnce();
