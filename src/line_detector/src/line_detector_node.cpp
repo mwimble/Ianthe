@@ -11,11 +11,14 @@ using namespace std;
 
 Scalar colorArray[] = {Scalar(0, 0, 255),Scalar(255, 0, 0),Scalar(0, 255, 0),Scalar(255, 128, 64),Scalar(64, 128, 255),Scalar(128, 255, 64),Scalar(77,77,77),Scalar(164,124,68),Scalar(204,196,132),Scalar(164,148,147),Scalar(163,123,67),Scalar(26,122,26), Scalar(195,195,50),Scalar(193,193,193),Scalar(255,248,73),Scalar(243,243,243)};
 
+bool saveImages = false;
 bool showImage = false;
 
 int main( int argc, char** argv ) {
 	ros::init(argc, argv, "line_detector_node");
 	ros::NodeHandle nh_("~");
+	nh_.getParam("save_images", saveImages);
+	ROS_INFO("[MazeDetector] PARAM save_images: %s", saveImages ? "TRUE" : "false");
 	nh_.getParam("show_image", showImage);
 	ROS_INFO("[line_detector_node] PARAM show_image: %s", showImage ? "TRUE" : "false");
 	ros::Publisher detectPublisher = nh_.advertise<line_detector::line_detector>("/lineDetect", 1);
@@ -70,7 +73,7 @@ int main( int argc, char** argv ) {
 	        ld.header.stamp = currentTime;
 	        detectPublisher.publish(ld);
 
-	        if (showImage) {
+	        if (saveImages || showImage) {
 		        Mat ti = camera.getOriginalImage();
 
 		        if (camera.verticalLowerLeftY != -1) {
@@ -91,11 +94,20 @@ int main( int argc, char** argv ) {
 	            cv::line(ti, Point(0, size.height / 2), Point(size.width, size.height / 2), axisColor, 1, 8);
 		        cv::line(ti, Point(camera.verticalCurve.b * size.height + camera.verticalCurve.a, size.height), Point(camera.verticalCurve.a, 0), verticalLineColor, 1, 8);
 		        cv::line(ti, Point(0, camera.horizontalCurve.a), Point(size.width, camera.horizontalCurve.b * size.width + camera.horizontalCurve.a), verticalLineColor, 1, 8);
-		        
-		        imshow("Original Image", camera.getOriginalImage());
-		        imshow("Thresholded Image", camera.getThresholdedImage());
+	
+				if (saveImages) {
+					ros::Time currentTime = ros::Time::now();
+					double secs = currentTime.toSec();
+					char fn[128];
+					sprintf(fn, "/home/pi/images/%-20.9f.jpg", secs);
+					imwrite(fn, camera.getOriginalImage());
+				}
 
-		        if (waitKey(30) == 27) { return 0; }
+		        if (showImage) {
+			        imshow("Original Image", camera.getOriginalImage());
+			        imshow("Thresholded Image", camera.getThresholdedImage());
+			        //if (waitKey(30) == 27) { return 0; }
+			    }
 		    }
 
 			ros::spinOnce();
