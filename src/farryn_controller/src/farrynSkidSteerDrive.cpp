@@ -58,7 +58,9 @@ FarrynSkidSteerDrive::FarrynSkidSteerDrive() :
     m1MovingForward(true),
     m2MovingForward(true),
     maxM1Distance(0),
-    maxM2Distance(0)
+    maxM2Distance(0),
+    max_wheel_vel_(0.4),
+    min_wheel_vel_(0.0)
     {
     ROS_INFO_COND(DEBUG, "[FarrynSkidSteerDrive::FarrynSkidSteerDrive %X] constructor", gettid());
 	if (!ros::isInitialized()) {
@@ -208,14 +210,6 @@ void FarrynSkidSteerDrive::drive(float velocity, float angle) {
 	lastYVelocity = velocity + (AXLE_WIDTH / 2.0) * angle;
 	int32_t m1_abs_speed = m1_speed >= 0 ? m1_speed : -m1_speed;
 	int32_t m2_abs_speed = m2_speed >= 0 ? m2_speed : -m2_speed;
-	/*
-	if (left_velocity > M1_MAX_METERS_PER_SEC) left_velocity = M1_MAX_METERS_PER_SEC;
-	if (right_velocity > M2_MAX_METERS_PER_SEC) right_velocity = M2_MAX_METERS_PER_SEC;
-
-	unsigned long m1_speed = left_velocity / M1_MAX_METERS_PER_SEC * M1_QPPS;
-	unsigned long m2_speed = right_velocity / M2_MAX_METERS_PER_SEC * M2_QPPS;
-	*/
-
 	int32_t m1_max_distance = m1_abs_speed * MAX_SECONDS_TRAVEL; // Limit travel.
 	int32_t m2_max_distance = m2_abs_speed * MAX_SECONDS_TRAVEL; // Limit travel.
 	ROS_INFO_STREAM_COND(DEBUG, "[FarrynSkidSteerDrive::drive " << hex << gettid() << dec << "] ---- command: " << MIXEDSPEEDDIST
@@ -449,7 +443,8 @@ float FarrynSkidSteerDrive::getLogicBatteryLevel() {
 			ROS_INFO_COND(DEBUG, "<----- [FarrynSkidSteerDrive::getLogicBatteryLevel %X] return %f", gettid(), result);
 			return result;
 		} catch (TRoboClawException* e) {
-			ROS_ERROR_COND(DEBUG, "[FarrynSkidSteerDrive::getLogicBatteryLevel %X] Exception: %s, retry number: %d", gettid(), e->what(), retry);
+			ROS_ERROR("[FarrynSkidSteerDrive::getLogicBatteryLevel %X] Exception: %s, retry number: %d", gettid(), e->what(), retry);
+			restartUsb();
 		} catch (...) {
 		    ROS_ERROR("[FarrynSkidSteerDrive::getLogicBatteryLevel %X] Uncaught exception !!!", gettid());
 		}
@@ -1056,7 +1051,7 @@ uint8_t FarrynSkidSteerDrive::readByteWithTimeout() {
 		throw new TRoboClawException("[FarrynSkidSteerDrive::readByteWithTimeout] TIMEOUT");
 	} else if (ufd[0].revents & POLLERR) {
 		ROS_ERROR("[FarrynSkidSteerDrive::readByteWithTimeout %X] Error on socket", gettid());
-		//#####restartUsb();
+		restartUsb();
 		throw new TRoboClawException("[FarrynSkidSteerDrive::readByteWithTimeout] Error on socket");
 	} else if (ufd[0].revents & POLLIN) {
 		char buffer[1];
@@ -1130,6 +1125,7 @@ void FarrynSkidSteerDrive::restartUsb() {
     int result = ioctl(clawPort, USBDEVFS_RESET, 0);
     ROS_ERROR("[FarrynSkidSteerDrive::restartUsb %X] ioctl result: %d", gettid(), result);
     close(clawPort);
+    usleep(200000);
     openUsb();
     ROS_ERROR("<----- [FarrynSkidSteerDrive::restartUsb %X] ioctl result: %d", gettid(), result);
 }
@@ -1253,7 +1249,8 @@ void FarrynSkidSteerDrive::stop() {
             maxM2Distance = 0;
 			return;
 		} catch (TRoboClawException* e) {
-			ROS_ERROR_COND(DEBUG, "[FarrynSkidSteerDrive::stop %X] Exception: %s, retry number: %d", gettid(), e->what(), retry);
+			ROS_ERROR("[FarrynSkidSteerDrive::stop %X] Exception: %s, retry number: %d", gettid(), e->what(), retry);
+			restartUsb();
 		} catch (...) {
 		    ROS_ERROR("[FarrynSkidSteerDrive::stop %X] Uncaught exception !!!", gettid());
 		}
@@ -1399,14 +1396,12 @@ void FarrynSkidSteerDrive::updateOdometry() {
 	}
 }
 
-// Convert linear / angular velocity to left / right motor speeds in meters /
-// second
+// Convert linear / angular velocity to left / right motor speeds in meters / second
 void FarrynSkidSteerDrive::vwToWheelSpeed(double v, double w, double *left_mps, double *right_mps) {
     // Compute the differential drive speeds from the input
     *left_mps = v - (axle_width_ / 2.0) * w;
     *right_mps = v + (axle_width_ / 2.0) * w;
 
-    /*
     // Scale the speeds to respect the wheel speed limit
     double limitk = 1.0;
     if (fabs(*left_mps) > max_wheel_vel_) {
@@ -1431,7 +1426,6 @@ void FarrynSkidSteerDrive::vwToWheelSpeed(double v, double w, double *left_mps, 
     } if (fabs(*right_mps) < min_wheel_vel_) {
       *right_mps = 0.0;
     }
-    */
 }
 
 void FarrynSkidSteerDrive::writeByte(uint8_t byte) {
@@ -1439,7 +1433,7 @@ void FarrynSkidSteerDrive::writeByte(uint8_t byte) {
 	ssize_t result = write(clawPort, &byte, 1);
 	if (result != 1) {
 	  ROS_ERROR("[FarrynSkidSteerDrive::writeByte %X] Unable to write one byte, result: %d, errno: %d)", gettid(), (int) result,  errno);
-		//#####restartUsb();
+		restartUsb();
 		throw new TRoboClawException("[FarrynSkidSteerDrive::writeByte] Unable to write one byte");
 	}
 }

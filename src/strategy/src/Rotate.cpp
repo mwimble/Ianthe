@@ -85,11 +85,6 @@ void Rotate::publishCurrentStragety(string strategy) {
 	}
 }
 
-// TODO
-// Rotate more than 90 degrees.
-// But stop when vertical line found and near center.
-// Cap speed in motor controler (x) at 0.5
-
 StrategyFn::RESULT_T Rotate::tick() {
 	RESULT_T result = FATAL;
 	bool keepRotating = false;

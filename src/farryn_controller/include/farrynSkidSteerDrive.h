@@ -80,6 +80,12 @@ private:
 	double	updateRate_;
 	double	updatePeriod_;
 
+	// Max wheel velocity in meters/second.
+	double max_wheel_vel_;
+
+	// Min wheel velocity in meters/second.
+	double min_wheel_vel_;
+
 	//static boost::mutex roboClawLock; // Mutex for access to roboclaw via USB.
 	boost::thread roboClawStatusReaderThread; // Periodically read and publish RoboClaw status.
 	boost::thread roboClawMotorControllerThread; // Periodically dequeue and execute motor commands.
