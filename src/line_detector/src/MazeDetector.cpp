@@ -22,8 +22,8 @@ MazeDetector::MazeDetector(VideoCapture videoDevice, double scaleFactor)
 	nh_ = ros::NodeHandle("~");
 	nh_.getParam("debug", debug_);
 	ROS_INFO("[MazeDetector] PARAM debug: %s", debug_ ? "TRUE" : "false");
-	nh_.getParam("save_image", saveImage);
-	ROS_INFO("[MazeDetector] PARAM save_image: %s", saveImage ? "TRUE" : "false");
+	nh_.getParam("save_images", saveImages);
+	ROS_INFO("[MazeDetector] PARAM save_images: %s", saveImages ? "TRUE" : "false");
 	controlWindowName = "Ewyn Camera Controls";
 	setDefaultThresholding();
 	videoFeed = videoDevice;
@@ -168,12 +168,12 @@ void MazeDetector::detectLines() {
 	if (debug_) ROS_INFO("[MazeDetector] horizontalLowerLeftX: %d, horizontalLowerLeftY: %d, horizontalUpperRightX: %d, horizontalUpperRightY: %d, w: %d, l: %d",
 		horizontalLowerLeftX, horizontalLowerLeftY, horizontalUpperRightX, horizontalUpperRightY, horizontalLowerLeftY - horizontalUpperRightY, horizontalUpperRightX - horizontalLowerLeftX);
 	if (debug_) ROS_INFO("[MazeDetector] horizontalCurve a: %6.4f, b: %6.4f", horizontalCurve.a, horizontalCurve.b);
-	if (saveImage) {
+	if (saveImages) {
 		ros::Time currentTime = ros::Time::now();
 		double secs = currentTime.toSec();
 		char fn[128];
 		sprintf(fn, "/home/pi/images/%-20.9f.jpg", secs);
-		imwrite(fn, thresholdedImage);
+		imwrite(fn, originalImage);
 	}
 }
 

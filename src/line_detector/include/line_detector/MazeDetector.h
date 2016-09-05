@@ -75,7 +75,7 @@ public:
 	
 private:
 	bool debug_;
-	bool saveImage;
+	bool saveImages;
 
 	ros::NodeHandle nh_;
 

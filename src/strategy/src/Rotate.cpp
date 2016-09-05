@@ -9,7 +9,8 @@ using namespace std;
 
 Rotate::Rotate() :
 	debug_(false), 
-	state(kROTATING_START) {
+	state(kROTATING_START),
+	verticalLineFound(false) {
 
 	nh_ = ros::NodeHandle("~");
 	nh_.getParam("cmd_vel_topic_name", cmdVelTopicName_);
@@ -21,10 +22,14 @@ Rotate::Rotate() :
 	nh_.getParam("imu_topic_name", imuTopicName_);
 	ROS_INFO("[Rotate] PARAM imu_topic_name: %s", imuTopicName_.c_str());
 
+	nh_.getParam("line_detector_topic_name", lineDetectorTopicName_);
+	ROS_INFO("[Rotate] PARAM line_detector_topic_name: %s", lineDetectorTopicName_.c_str());
+
 	currentStrategyPub_ = nh_.advertise<std_msgs::String>("current_stragety", 1, true /* latched */);
 	lastReportedStrategy_ = strategyHasntStarted;
 	imuSub_ = nh_.subscribe(imuTopicName_.c_str(), 1, &Rotate::imuTopicCb, this);
-	cmdVelPub_ = nh_.advertise<geometry_msgs::Twist>("cmd_vel", 1);
+	cmdVelPub_ = nh_.advertise<geometry_msgs::Twist>(cmdVelTopicName_.c_str(), 1);
+	lineDetectorSub_ = nh_.subscribe(lineDetectorTopicName_.c_str(), 1, &Rotate::lineDetectorTopicCb, this);
 }
 
 Rotate& Rotate::Singleton() {
@@ -55,6 +60,21 @@ string Rotate::name() {
 	return string("Rotate");
 }
 
+void Rotate::lineDetectorTopicCb(const line_detector::line_detector& msg) {
+	horizontalLineFound = msg.horizontalToLeft || msg.horizontalToRight;
+	horizontalToLeft = msg.horizontalToLeft;
+	horizontalToRight = msg.horizontalToRight;
+	verticalLineFound = msg.verticalToBottom;
+	lineDetectorMsgReceived = true;
+	if (debug_) {
+		ROS_INFO("[Rotate] toLeft: %s, toRight: %s, (hb: %d, hl: %d, len: %d), up: %s, down: %s (vb: %d, vl: %d, len: %d)",
+			msg.horizontalToLeft ? "TRUE" : "false", msg.horizontalToRight ? "TRUE" : "false",
+			msg.horizontalBottom, msg.horizontalLeft, msg.horizontalLength,
+			msg.verticalToTop ? "TRUE" : "false", msg.verticalToBottom ? "TRUE" : "false",
+			msg.verticalBottom, msg.verticalLeft, msg.verticalYlength);
+	}
+}
+
 void Rotate::publishCurrentStragety(string strategy) {
 	std_msgs::String msg;
 	msg.data = strategy;
@@ -64,6 +84,11 @@ void Rotate::publishCurrentStragety(string strategy) {
 		ROS_INFO("[Rotate] strategy: %s", strategy.c_str());
 	}
 }
+
+// TODO
+// Rotate more than 90 degrees.
+// But stop when vertical line found and near center.
+// Cap speed in motor controler (x) at 0.5
 
 StrategyFn::RESULT_T Rotate::tick() {
 	RESULT_T result = FATAL;
@@ -108,8 +133,8 @@ StrategyFn::RESULT_T Rotate::tick() {
 			}
 
 			if (keepRotating) {
-				cmdVel.linear.x = 0.0;
-				cmdVel.linear.z = 1.0;
+				cmdVel.linear.x = 0.09;
+				cmdVel.angular.z = 1.0;
 				cmdVelPub_.publish(cmdVel);
 				result = RUNNING;
 				if (debug_) {
@@ -117,7 +142,7 @@ StrategyFn::RESULT_T Rotate::tick() {
 				}
 			} else {
 				cmdVel.linear.x = 0.0;
-				cmdVel.linear.z = 0.0;
+				cmdVel.angular.z = 0.0;
 				cmdVelPub_.publish(cmdVel);
 				result = SUCCESS;
 				strategyContext.needToRotateLeft180 = false;
@@ -137,7 +162,7 @@ StrategyFn::RESULT_T Rotate::tick() {
 
 			if (keepRotating) {
 				cmdVel.linear.x = 0.0;
-				cmdVel.linear.z = -1.0;
+				cmdVel.angular.z = -1.0;
 				cmdVelPub_.publish(cmdVel);
 				result = RUNNING;
 				if (debug_) {
@@ -145,7 +170,7 @@ StrategyFn::RESULT_T Rotate::tick() {
 				}
 			} else {
 				cmdVel.linear.x = 0.0;
-				cmdVel.linear.z = 0.0;
+				cmdVel.angular.z = 0.0;
 				cmdVelPub_.publish(cmdVel);
 				result = SUCCESS;
 				strategyContext.needToRotateRight180 = false;

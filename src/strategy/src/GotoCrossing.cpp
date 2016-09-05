@@ -29,7 +29,7 @@ GotoCrossing::GotoCrossing() :
 	currentStrategyPub_ = nh_.advertise<std_msgs::String>("current_stragety", 1, true /* latched */);
 	lastReportedStrategy_ = strategyHasntStarted;
 	lineDetectorSub_ = nh_.subscribe(lineDetectorTopicName_.c_str(), 1, &GotoCrossing::lineDetectorTopicCb, this);
-	cmdVelPub_ = nh_.advertise<geometry_msgs::Twist>("cmd_vel", 1);
+	cmdVelPub_ = nh_.advertise<geometry_msgs::Twist>(cmdVelTopicName_.c_str(), 1);
 }
 
 GotoCrossing& GotoCrossing::Singleton() {

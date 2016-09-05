@@ -9,12 +9,14 @@
 	<arg name="debug_rotate" default="false" />
 	<arg name="imu_topic_name" default="/imu" />
 	<arg name="line_detector_topic_name" default="/lineDetect" />
+	<arg name="save_images" default="false" />
 	<arg name="show_image" default="false" />
 
 	<include file="$(find farryn_controller)launch/farryn.launch" />
 	<include file="$(find kaimi_imu)launch/kaimi_imu.launch.xml" />
 	<include file="$(find line_detector)launch/line_detector.launch" >
 		<arg name="debug_line_detector" value="$(arg debug_line_detector)" />
+		<arg name="save_images" value="$(arg save_images)" />
 		<arg name="show_image" value="$(arg show_image)" />
 	</include>
 
