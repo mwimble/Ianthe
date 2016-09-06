@@ -33,7 +33,9 @@
 #define SetDWORDval(arg) (uint8_t)(arg>>24),(uint8_t)(arg>>16),(uint8_t)(arg>>8),(uint8_t)arg
 
 // 7.5 inches in meters.
-#define axle_width_ 0.1905
+//#define axle_width_ 0.1905
+#define axle_width_ 0.21166666666667
+#define calibration_correction_factor_ 0.66674963995519
 #define quad_pulse_per_meter_ 6353.4523937932416
 
 // Max no-load speed = 160 RPM
@@ -1287,8 +1289,8 @@ void FarrynSkidSteerDrive::updateOdometry() {
 
 		    int32_t m1Encoder = getM1Encoder();
 		    int32_t m2Encoder = getM2Encoder();
-		    double m1DeltaDistance = (m1Encoder - lastM1Encoder) / quad_pulse_per_meter_;
-		    double m2DeltaDistance = (m2Encoder - lastM2Encoder) / quad_pulse_per_meter_;
+		    double m1DeltaDistance = (m1Encoder - lastM1Encoder) * calibration_correction_factor_ / quad_pulse_per_meter_;
+		    double m2DeltaDistance = (m2Encoder - lastM2Encoder) * calibration_correction_factor_ / quad_pulse_per_meter_;
 		    double theta = (m2DeltaDistance - m1DeltaDistance) / axle_width_;
 		    lastM1Encoder = m1Encoder;
 		    lastM2Encoder = m2Encoder;
