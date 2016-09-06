@@ -90,6 +90,15 @@ StrategyFn::RESULT_T Rotate::tick() {
 	bool keepRotating = false;
 	geometry_msgs::Twist cmdVel;
 
+	if (strategyContext.needToFollowLine) {
+		if (debug_) {
+			ROS_INFO("[Rotate] Still following line");
+		}
+
+		result = SUCCESS;
+		return result;
+	}
+	
 	if (!strategyContext.needToRotateLeft180 && !strategyContext.needToRotateRight180) {
 		if (debug_) {
 			ROS_INFO("[Rotate] no need to rotate");

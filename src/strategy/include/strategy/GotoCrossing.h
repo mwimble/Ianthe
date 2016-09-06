@@ -3,7 +3,9 @@
 
 #include <ros/ros.h>
 #include <ros/console.h>
-#include "line_detector/line_detector.h"
+#include <geometry_msgs/Pose.h>
+#include <line_detector/line_detector.h>
+#include <nav_msgs/Odometry.h>
 #include "strategy/StrategyContext.h"
 #include "strategy/StrategyFn.h"
 #include <string>
@@ -16,11 +18,13 @@ private:
 	static const string strategyHasntStarted;
 	static const string strategyLookingForHorizontalLineEnd;
 	static const string strategyLookingForHorizontalLineStart;
+	static const string strategyMovingToCenteringPosition;
 	static const string strategySuccess;
 
 	typedef enum {
 		kLOOKING_FOR_HORIZONTAL_LINE_START,
-		kLOOKING_FOR_HORIZONTAL_LINE_END
+		kLOOKING_FOR_HORIZONTAL_LINE_END,
+		kMOVING_TO_CENTERING_POSITION
 	} STATE;
 
 	STATE state;
@@ -54,6 +58,15 @@ private:
 	// Topic to publish current strategy.
 	ros::Publisher currentStrategyPub_;
 
+	// Distance traveled to when first discovering line end.
+	double distanceTraveledToLineEnd_;
+
+	// Pose at end of travel.
+	geometry_msgs::Pose endingPose_;
+
+	// Last odometry message received.
+	nav_msgs::Odometry lastOdomMsg_;
+
 	// Subscriber to line_detector message.
 	ros::Subscriber lineDetectorSub_;
 
@@ -66,12 +79,24 @@ private:
 	// ROS node handle.
 	ros::NodeHandle nh_;
 
+	// Has any odometry message been received?
+	bool odometryMessageReceived_;
+
+	// Subscriber to Odometry message.
+	ros::Subscriber odometrySub_;
+
 	static StrategyContext& strategyContext;
+
+	// Pose at start of travel.
+	geometry_msgs::Pose startingPose_;
 
 	GotoCrossing();
 
 	// Process line_detector messages.
 	void lineDetectorTopicCb(const line_detector::line_detector& msg);
+
+	// Process Odometry messages.
+	void odomTopicCb(const nav_msgs::Odometry& msg);
 
 	// Publish current strategy (if changed).
 	void publishCurrentStragety(string strategy);
