@@ -135,9 +135,9 @@ StrategyFn::RESULT_T Rotate::tick() {
 			break;
 
 		case kROTATING_LEFT:
-			verticalError = verticalCenter - 161;
+			verticalError = verticalCenter - 160;
 			if (verticalError < 0) verticalError = -verticalError;
-			keepRotating = (verticalLineFound && (verticalError > 5));
+			keepRotating = (verticalLineFound && (verticalError > 7));
 			if (!keepRotating && !verticalLineFound) {
 				if (startYaw_ > goalYaw_) {
 					keepRotating = (yaw_ > (goalYaw_ + 90)) || (yaw_ < goalYaw_);
