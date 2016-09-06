@@ -25,4 +25,4 @@ int32 verticalUpperRightX
 int32 verticalUpperRightY
 float64 verticalCurveA
 float64 verticalCurveB
-
+float64 verticalIntercept

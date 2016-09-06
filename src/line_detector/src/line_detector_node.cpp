@@ -69,6 +69,7 @@ int main( int argc, char** argv ) {
 	        ld.verticalYlength = camera.verticalLowerLeftY - camera.verticalUpperRightY;
 	        ld.verticalToBottom = camera.verticalLowerLeftY > int(size.height * 0.75);
 	        ld.verticalToTop = camera.verticalUpperRightY < (ld.horizontalBottom - 40);
+	        ld.verticalIntercept = ld.verticalCurveA + (ld.verticalCurveB * size.width);
 
 	        ld.header.stamp = currentTime;
 	        detectPublisher.publish(ld);
