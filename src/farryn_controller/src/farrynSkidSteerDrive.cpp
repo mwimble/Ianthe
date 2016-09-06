@@ -1391,9 +1391,9 @@ void FarrynSkidSteerDrive::updateOdometry() {
   		    lastTime = currentTime;
 		    rate.sleep();
 		} catch (TRoboClawException* e) {
-			ROS_ERROR_COND(DEBUG, "[FarrynSkidSteerDrive::roboClawStatusReader %X] Exception: %s", gettid(), e->what());
+			ROS_ERROR_COND(DEBUG, "[FarrynSkidSteerDrive::updateOdometry %X] Exception: %s", gettid(), e->what());
 		} catch (...) {
-		    ROS_ERROR("[FarrynSkidSteerDrive::roboClawStatusReader %X] Uncaught exception !!!", gettid());
+		    ROS_ERROR("[FarrynSkidSteerDrive::updateOdometry %X] Uncaught exception !!!", gettid());
 		}
 	}
 }
