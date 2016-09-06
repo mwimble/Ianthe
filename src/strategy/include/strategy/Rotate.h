@@ -31,6 +31,9 @@ private:
 	bool horizontalToRight;
 	bool lineDetectorMsgReceived;
 	bool verticalLineFound;
+	double verticalCurveA;
+	double verticalCurveB;
+	double verticalCenter;
 
 	// Topic to publish robot movements.
 	ros::Publisher cmdVelPub_;

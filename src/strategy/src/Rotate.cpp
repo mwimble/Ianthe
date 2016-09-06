@@ -64,14 +64,18 @@ void Rotate::lineDetectorTopicCb(const line_detector::line_detector& msg) {
 	horizontalLineFound = msg.horizontalToLeft || msg.horizontalToRight;
 	horizontalToLeft = msg.horizontalToLeft;
 	horizontalToRight = msg.horizontalToRight;
+	verticalCurveA = msg.verticalCurveA;
+	verticalCurveB = msg.verticalCurveB;
+	verticalCenter = verticalCurveA + (verticalCurveB * 320);
 	verticalLineFound = msg.verticalToBottom;
 	lineDetectorMsgReceived = true;
 	if (debug_) {
-		ROS_INFO("[Rotate] toLeft: %s, toRight: %s, (hb: %d, hl: %d, len: %d), up: %s, down: %s (vb: %d, vl: %d, len: %d)",
+		ROS_INFO("[Rotate] toLeft: %s, toRight: %s, (hb: %d, hl: %d, len: %d), up: %s, down: %s (vb: %d, vl: %d, len: %d), a: %7.4f, b: %7.4f, vc: %7.4f",
 			msg.horizontalToLeft ? "TRUE" : "false", msg.horizontalToRight ? "TRUE" : "false",
 			msg.horizontalBottom, msg.horizontalLeft, msg.horizontalLength,
 			msg.verticalToTop ? "TRUE" : "false", msg.verticalToBottom ? "TRUE" : "false",
-			msg.verticalBottom, msg.verticalLeft, msg.verticalYlength);
+			msg.verticalBottom, msg.verticalLeft, msg.verticalYlength,
+			verticalCurveA, verticalCurveB, verticalCenter);
 	}
 }
 
@@ -89,6 +93,7 @@ StrategyFn::RESULT_T Rotate::tick() {
 	RESULT_T result = FATAL;
 	bool keepRotating = false;
 	geometry_msgs::Twist cmdVel;
+	double verticalError;
 
 	if (strategyContext.needToFollowLine) {
 		if (debug_) {
@@ -130,10 +135,26 @@ StrategyFn::RESULT_T Rotate::tick() {
 			break;
 
 		case kROTATING_LEFT:
-			if (startYaw_ > goalYaw_) {
-				keepRotating = (yaw_ > (goalYaw_ + 90)) || (yaw_ < goalYaw_);
-			} else {
-				keepRotating = yaw_ < goalYaw_;
+			verticalError = verticalCenter - 161;
+			if (verticalError < 0) verticalError = -verticalError;
+			keepRotating = (verticalLineFound && (verticalError > 5));
+			if (!keepRotating && !verticalLineFound) {
+				if (startYaw_ > goalYaw_) {
+					keepRotating = (yaw_ > (goalYaw_ + 90)) || (yaw_ < goalYaw_);
+				} else {
+					keepRotating = yaw_ < goalYaw_;
+				}
+			}
+
+			if (debug_) {
+				ROS_INFO("[Rotate] kROTATING_LEFT, keepRotating: %s, startYaw_: %7.4f, goalYaw_: %7.4f, yaw_: %7.4f, verticalLineFound: %s, verticalCenter: %7.4f, verticalError: %7.4f",
+					     keepRotating ? "TRUE" : "false",
+					     startYaw_,
+					     goalYaw_,
+					     yaw_,
+					     verticalLineFound ? "TRUE" : "false",
+					     verticalCenter,
+					     verticalError);
 			}
 
 			if (keepRotating) {
@@ -141,9 +162,6 @@ StrategyFn::RESULT_T Rotate::tick() {
 				cmdVel.angular.z = 1.0;
 				cmdVelPub_.publish(cmdVel);
 				result = RUNNING;
-				if (debug_) {
-					ROS_INFO("[Rotate] rotating left, startYaw_: %7.4f, goalYaw_: %7.4f, yaw_: %7.4f", startYaw_, goalYaw_, yaw_);
-				}
 			} else {
 				cmdVel.linear.x = 0.0;
 				cmdVel.angular.z = 0.0;
