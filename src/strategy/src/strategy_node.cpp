@@ -29,7 +29,7 @@ int main(int argc, char** argv) {
 	ros::Rate rate(40); // Loop rate
 
 	behaviors.push_back(&GotoCrossing::Singleton());
-	//#####behaviors.push_back(&Rotate::Singleton());
+	behaviors.push_back(&Rotate::Singleton());
 
 	strategyContext.atGoal = false;
 

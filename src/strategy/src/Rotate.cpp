@@ -98,7 +98,7 @@ StrategyFn::RESULT_T Rotate::tick() {
 		result = SUCCESS;
 		return result;
 	}
-	
+
 	if (!strategyContext.needToRotateLeft180 && !strategyContext.needToRotateRight180) {
 		if (debug_) {
 			ROS_INFO("[Rotate] no need to rotate");
@@ -131,13 +131,13 @@ StrategyFn::RESULT_T Rotate::tick() {
 
 		case kROTATING_LEFT:
 			if (startYaw_ > goalYaw_) {
-				keepRotating = (yaw_ > (goalYaw_ + 10)) || (yaw_ < goalYaw_);
+				keepRotating = (yaw_ > (goalYaw_ + 90)) || (yaw_ < goalYaw_);
 			} else {
 				keepRotating = yaw_ < goalYaw_;
 			}
 
 			if (keepRotating) {
-				cmdVel.linear.x = 0.09;
+				cmdVel.linear.x = 0.0;
 				cmdVel.angular.z = 1.0;
 				cmdVelPub_.publish(cmdVel);
 				result = RUNNING;
@@ -159,7 +159,7 @@ StrategyFn::RESULT_T Rotate::tick() {
 
 		case kROTATING_RIGHT:
 			if (startYaw_ < goalYaw_) {
-				keepRotating = (yaw_ < (goalYaw_ - 10)) || (yaw_ > goalYaw_);
+				keepRotating = (yaw_ < (goalYaw_ - 90)) || (yaw_ > goalYaw_);
 			} else {
 				keepRotating = yaw_ > goalYaw_;
 			}
