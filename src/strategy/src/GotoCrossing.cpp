@@ -40,10 +40,12 @@ GotoCrossing& GotoCrossing::Singleton() {
 }
 
 void GotoCrossing::lineDetectorTopicCb(const line_detector::line_detector& msg) {
+	lastLineDetectorMsg = msg;
 	horizontalLineFound = msg.horizontalToLeft || msg.horizontalToRight;
 	horizontalToLeft = msg.horizontalToLeft;
 	horizontalToRight = msg.horizontalToRight;
 	verticalLineFound = msg.verticalToBottom;
+	verticalIntercept = msg.verticalIntercept;
 	lineDetectorMsgReceived = true;
 	if (debug_) {
 		ROS_INFO("[GotoCrossing] toLeft: %s, toRight: %s, (hb: %d, hl: %d, len: %d), up: %s, down: %s (vb: %d, vl: %d, len: %d)",
@@ -86,6 +88,9 @@ double distanceBetweenPoses(geometry_msgs::Pose pose1, geometry_msgs::Pose pose2
 StrategyFn::RESULT_T GotoCrossing::tick() {
 	RESULT_T result = FATAL;
 	geometry_msgs::Twist cmdVel;
+	double zCorrection = lastLineDetectorMsg.verticalCurveB * 3;
+	if (zCorrection > 1.0) zCorrection = 1.0;
+	if (zCorrection < -1.0) zCorrection = -1.0;
 
 	if (!strategyContext.needToFollowLine) {
 		if (debug_) {
@@ -97,10 +102,13 @@ StrategyFn::RESULT_T GotoCrossing::tick() {
 	}
 
 	if (debug_) {
-		ROS_INFO("[GotoCrossing] state: %s, verticalLineFound: %s, sawHorizontalLine: %s",
+		ROS_INFO("[GotoCrossing] state: %s, verticalLineFound: %s, sawHorizontalLine: %s, verticalIntercept: %7.4f, verticalCurveB: %7.4f, zCorrection: %7.4f",
 			state == kLOOKING_FOR_HORIZONTAL_LINE_START ? "kLOOKING_FOR_HORIZONTAL_LINE_START" : "kLOOKING_FOR_HORIZONTAL_LINE_END",
 			verticalLineFound ? "TRUE" : "false",
-			sawHorizontalLine ? "TRUE" : "false");
+			sawHorizontalLine ? "TRUE" : "false",
+		    verticalIntercept,
+		    lastLineDetectorMsg.verticalCurveB,
+		    zCorrection);
 	}
 
 	if (!odometryMessageReceived_) {
@@ -122,14 +130,14 @@ StrategyFn::RESULT_T GotoCrossing::tick() {
 				sawHorizontalLine = true;
 				// Move until not found horizontal line.
 				cmdVel.linear.x = 0.1;
-				cmdVel.angular.z = 0.0;
+				cmdVel.angular.z = zCorrection;
 				cmdVelPub_.publish(cmdVel);
 				result = RUNNING;
 			} else {
 				// Move until found horizontal line.
 				geometry_msgs::Twist cmdVel;
 				cmdVel.linear.x = 0.1;
-				cmdVel.angular.z = 0.0;
+				cmdVel.angular.z = zCorrection;
 				cmdVelPub_.publish(cmdVel);
 				result = RUNNING;
 			}

@@ -41,6 +41,8 @@ private:
 	bool horizontalToLeft;
 	bool horizontalToRight;
 	bool lineDetectorMsgReceived;
+	double verticalIntercept;
+	line_detector::line_detector lastLineDetectorMsg;
 
 
 	// Positioned at a turning line?

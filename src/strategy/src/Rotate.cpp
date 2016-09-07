@@ -66,7 +66,7 @@ void Rotate::lineDetectorTopicCb(const line_detector::line_detector& msg) {
 	horizontalToRight = msg.horizontalToRight;
 	verticalCurveA = msg.verticalCurveA;
 	verticalCurveB = msg.verticalCurveB;
-	verticalCenter = verticalCurveA + (verticalCurveB * 320);
+	verticalIntercept = msg.verticalIntercept;
 	verticalLineFound = msg.verticalToBottom;
 	lineDetectorMsgReceived = true;
 	if (debug_) {
@@ -75,7 +75,7 @@ void Rotate::lineDetectorTopicCb(const line_detector::line_detector& msg) {
 			msg.horizontalBottom, msg.horizontalLeft, msg.horizontalLength,
 			msg.verticalToTop ? "TRUE" : "false", msg.verticalToBottom ? "TRUE" : "false",
 			msg.verticalBottom, msg.verticalLeft, msg.verticalYlength,
-			verticalCurveA, verticalCurveB, verticalCenter);
+			verticalCurveA, verticalCurveB, verticalIntercept);
 	}
 }
 
@@ -135,7 +135,7 @@ StrategyFn::RESULT_T Rotate::tick() {
 			break;
 
 		case kROTATING_LEFT:
-			verticalError = verticalCenter - 160;
+			verticalError = verticalIntercept - 160;
 			if (verticalError < 0) verticalError = -verticalError;
 			keepRotating = (verticalLineFound && (verticalError > 7));
 			if (!keepRotating && !verticalLineFound) {
@@ -147,13 +147,13 @@ StrategyFn::RESULT_T Rotate::tick() {
 			}
 
 			if (debug_) {
-				ROS_INFO("[Rotate] kROTATING_LEFT, keepRotating: %s, startYaw_: %7.4f, goalYaw_: %7.4f, yaw_: %7.4f, verticalLineFound: %s, verticalCenter: %7.4f, verticalError: %7.4f",
+				ROS_INFO("[Rotate] kROTATING_LEFT, keepRotating: %s, startYaw_: %7.4f, goalYaw_: %7.4f, yaw_: %7.4f, verticalLineFound: %s, verticalIntercept: %7.4f, verticalError: %7.4f",
 					     keepRotating ? "TRUE" : "false",
 					     startYaw_,
 					     goalYaw_,
 					     yaw_,
 					     verticalLineFound ? "TRUE" : "false",
-					     verticalCenter,
+					     verticalIntercept,
 					     verticalError);
 			}
 

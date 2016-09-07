@@ -33,7 +33,7 @@ private:
 	bool verticalLineFound;
 	double verticalCurveA;
 	double verticalCurveB;
-	double verticalCenter;
+	double verticalIntercept;
 
 	// Topic to publish robot movements.
 	ros::Publisher cmdVelPub_;
