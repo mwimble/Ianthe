@@ -33,6 +33,8 @@ int main( int argc, char** argv ) {
     MazeDetector camera = MazeDetector(cap, 0.5);
     if (showImage) camera.createControlWindow();
 
+	const int minAcceptableHorizontalLineLength = 180;
+	
 	ros::Rate r(20);
 	while (ros::ok()) {
 		try {
@@ -61,8 +63,8 @@ int main( int argc, char** argv ) {
 	        ld.horizontalLeft = camera.horizontalLowerLeftX;
 	        ld.horizontalBottom = (camera.horizontalCurve.b * camera.horizontalLowerLeftX) + camera.horizontalCurve.a;
 	        ld.horizontalLength = camera.horizontalUpperRightX - camera.horizontalLowerLeftX;
-	        ld.horizontalToLeft = camera.horizontalLowerLeftX < int(size.width * 0.25);
-	        ld.horizontalToRight = camera.horizontalUpperRightX > int(size.width * 0.75);
+	        ld.horizontalToLeft = (camera.horizontalLowerLeftX < int(size.width * 0.25)) && (ld.horizontalLength > minAcceptableHorizontalLineLength);
+	        ld.horizontalToRight = (camera.horizontalUpperRightX > int(size.width * 0.75)) && (ld.horizontalLength > minAcceptableHorizontalLineLength);
 
 	        ld.verticalBottom = camera.verticalLowerLeftY;
 	        ld.verticalLeft = (camera.verticalCurve.b * camera.verticalLowerLeftY) + camera.verticalCurve.a;
