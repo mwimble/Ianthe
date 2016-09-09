@@ -4,36 +4,59 @@
 #include <cv.h>
 #include <iostream>
 #include <stdlib.h>
+#include <stdio.h>   
 #include <sys/stat.h>
+#include <sys/time.h>
+#include <unistd.h>
 
 #include "line_detector/line_detector.h"
 
 using namespace cv;
 using namespace std;
 
+static double IMAGE_COLS = 320.0; // Scale image to be this many colums across
+
+void ProccTimePrint(struct timespec start , string msg) {
+	struct timespec end;
+	clock_gettime(CLOCK_MONOTONIC, &end);
+	double duration = ((double)(end.tv_sec - start.tv_sec) * 1.0e9 +
+              (double)(end.tv_nsec - start.tv_nsec)) / 1.0e9;
+
+	printf("%s %.4lf(sec) / %.4lf(fps) \n", msg.c_str(),  duration, 1.0 /duration );
+	fflush(stdout);
+	cout << "- - -" << endl;
+} 
 
 void handleControlChange(int newValue, void* userData) {
 	// MazeDetector* camera = (MazeDetector*) userData;
 	// cout << "New Value" << newValue << ", low hue value: " << camera->getLowHueThreshold() << endl;
 }
 
-MazeDetector::MazeDetector(VideoCapture videoDevice, double scaleFactor)
-	: imageLoaded(false), morphSize(5,5), scaleFactor(scaleFactor) {
+MazeDetector::MazeDetector(VideoCapture videoDevice)
+	: imageLoaded(false), morphSize(5,5), scaleFactor(1.0) {
 	nh_ = ros::NodeHandle("~");
 	nh_.getParam("debug", debug_);
 	ROS_INFO("[MazeDetector] PARAM debug: %s", debug_ ? "TRUE" : "false");
-	controlWindowName = "Ewyn Camera Controls";
+	controlWindowName = "Ianthe Camera Controls";
 	setDefaultThresholding();
 	videoFeed = videoDevice;
 	videoDevice >> originalImage;
 	imageLoaded = videoDevice.read(originalImage);
 	if (imageLoaded) {
+	    // KMEANS takes too long, even on a Jetson, so reduce the image resolution to make it faster.
+	    double scaleFactor = IMAGE_COLS / originalImage.cols;
 		scaleOriginalImage(scaleFactor);
+	    ROS_INFO("[MazeDetector] video capture scaleFactor: %5.3f, original cols: %d, original rows: %d, kmeans cols: %d, kmeans rows: %d",
+	    		 scaleFactor, 
+	    		 originalImage.cols, 
+	    		 originalImage.rows,
+	    		 reshaped_image32f.cols,
+	    		 reshaped_image32f.rows);
 	}
 }
 
-MazeDetector::MazeDetector(const std::string testFileName, double scaleFactor)
-	: imageLoaded(false), morphSize(8,8), scaleFactor(scaleFactor) {
+MazeDetector::MazeDetector(const std::string testFileName)
+	: imageLoaded(false), morphSize(8,8), scaleFactor(1.0) {
 	struct stat buffer;
 
 	controlWindowName = "Ewyn Camera Controls";
@@ -42,6 +65,10 @@ MazeDetector::MazeDetector(const std::string testFileName, double scaleFactor)
 	if (stat (testFileName.c_str(), &buffer) == 0) {
 		originalImage = imread(fileName);
 		imageLoaded = !originalImage.empty();
+
+	    // KMEANS takes too long, even on a Jetson, so reduce the image resolution to make it faster.
+	    double scaleFactor = IMAGE_COLS / originalImage.cols;
+
 		if (imageLoaded) {
 			scaleOriginalImage(scaleFactor);
 		}
@@ -168,12 +195,35 @@ void MazeDetector::detectLines() {
 	if (debug_) ROS_INFO("[MazeDetector] horizontalCurve a: %6.4f, b: %6.4f", horizontalCurve.a, horizontalCurve.b);
 }
 
+void MazeDetector::kmeansImage() {
+	struct timespec start;
+    Mat labels;
+    int cluster_number = 4; // 10; // This is arbitrary. I increased it until I got the results I wanted.
+    TermCriteria criteria {TermCriteria::COUNT, 100, 1};
+
+	clock_gettime(CLOCK_MONOTONIC, &start);
+    Mat centers;
+    kmeans(reshaped_image32f, cluster_number, labels, criteria, 1, KMEANS_RANDOM_CENTERS, centers);
+	ProccTimePrint(start , "kmeans");
+}
+
 void MazeDetector::scaleOriginalImage(double scaleFactor) {
 	if (!originalImage.empty() && (scaleFactor != 1.0)) {
-		Size scaleSize = originalImage.size();
-		scaleSize.height *= scaleFactor;
-		scaleSize.width *= scaleFactor;
-		resize(originalImage, originalImage, scaleSize);
+		// Size scaleSize = originalImage.size();
+		// scaleSize.height *= scaleFactor;
+		// scaleSize.width *= scaleFactor;
+		// resize(originalImage, originalImage, scaleSize);
+
+	    Mat resizedImage;
+	    resize(originalImage, resizedImage, Size(), scaleFactor, scaleFactor, INTER_AREA);
+
+	    Mat reshaped_image = resizedImage.reshape(1, resizedImage.cols * resizedImage.rows);
+	    cout << "reshaped image: " << reshaped_image.rows << ", " << reshaped_image.cols << endl;
+	    assert(reshaped_image.type() == CV_8UC1);
+
+	    reshaped_image.convertTo(reshaped_image32f, CV_32FC1, 1.0 / 255.0);
+	    cout << "reshaped image 32f: " << reshaped_image32f.rows << ", " << reshaped_image32f.cols << endl;
+	    assert(reshaped_image32f.type() == CV_32FC1);
 	}
 }
 

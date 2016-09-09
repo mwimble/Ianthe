@@ -30,17 +30,18 @@ int main( int argc, char** argv ) {
      	return -1;
     }
     
-    MazeDetector camera = MazeDetector(cap, 0.5);
+    MazeDetector camera = MazeDetector(cap);
     if (showImage) camera.createControlWindow();
 
-	const int minAcceptableHorizontalLineLength = 180;
+	const int minAcceptableHorizontalLineLength = 120;
 	
 	ros::Rate r(20);
 	while (ros::ok()) {
 		try {
 	        camera.updateOriginalImage();
-	        camera.thresholdImage();
-	        camera.detectLines();
+	        camera.kmeansImage();
+	        // camera.thresholdImage();
+	        // camera.detectLines();
 	        
 	        Size size = camera.getOriginalImage().size();
 	        ros::Time currentTime = ros::Time::now();

@@ -2,6 +2,7 @@ cmake_minimum_required(VERSION 2.8.3)
 project(line_detector)
 
 set(CMAKE_BUILD_TYPE Debug)
+SET(CMAKE_CXX_FLAGS  "${CMAKE_CXX_FLAGS} -g -std=gnu++0x" )
 
 ## Find catkin macros and libraries
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
@@ -19,7 +20,7 @@ find_package(catkin REQUIRED COMPONENTS
 find_package( OpenCV REQUIRED)
 
 ## System dependencies are found with CMake's conventions
-# find_package(Boost REQUIRED COMPONENTS system)
+find_package(Boost 1.54.0 REQUIRED COMPONENTS system)
 
 
 ## Uncomment this if the package has a setup.py. This macro ensures
@@ -155,6 +156,7 @@ add_executable(
 target_link_libraries(line_detector_node
 	${catkin_LIBRARIES}
 	${OpenCV_LIBRARIES}
+	${Boost_LIBRARIES}
 )
 
 #############

@@ -32,9 +32,9 @@ public:
 		CURVE_FIT(float a_, float b_) : a(a_), b(b_) {}
 	};
 
-	MazeDetector(cv::VideoCapture videoDevice, double scaleFactor = 1.0);
+	MazeDetector(cv::VideoCapture videoDevice);
 
-	MazeDetector(const std::string testFileName, double scaleFactor = 1.0);
+	MazeDetector(const std::string testFileName);
 
 	~MazeDetector();
 
@@ -52,6 +52,8 @@ public:
 	cv::Mat getThresholdedImage() { return thresholdedImage; }
 
 	bool imageFound() { return imageLoaded; }
+
+	void kmeansImage();
 
 	void scaleOriginalImage(double scaleFactor);
 
@@ -87,6 +89,7 @@ private:
 	// OpenCV objects.
 	cv::Mat originalImage;
 	cv::Mat hsvImage;
+	cv::Mat reshaped_image32f;
 	cv::Mat	thresholdedImage;
 
 	// Thresholding limits.
