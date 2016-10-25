@@ -204,7 +204,7 @@ void MazeDetector::kmeansImage() {
 	clock_gettime(CLOCK_MONOTONIC, &start);
     Mat centers;
     kmeans(reshaped_image32f, cluster_number, labels, criteria, 1, KMEANS_RANDOM_CENTERS, centers);
-	ProccTimePrint(start , "kmeans");
+	// ProccTimePrint(start , "kmeans");
 
 	// Build a histogram of how many pixels occur for each label.
 	Mat labelHistogram(centers.rows, 1, CV_32S, Scalar(0));
