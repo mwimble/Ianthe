@@ -110,7 +110,7 @@ generate_dynamic_reconfigure_options( cfg/farryn_controller.cfg)
 ## DEPENDS: system dependencies of this project that dependent projects also need
 catkin_package(
   INCLUDE_DIRS include
-  LIBRARIES farryn_controller
+#  LIBRARIES farryn_controller
   CATKIN_DEPENDS dynamic_reconfigure geometry_msgs message_runtime rosconsole roscpp rospy sensor_msgs std_msgs tf
   DEPENDS system_lib
 )
@@ -142,7 +142,14 @@ add_executable(farryn_controller_node src/farrynController.cpp src/farrynSkidSte
 
 ## Add cmake target dependencies of the executable
 ## same as for the library above
-#add_dependencies(farryn_controller_node src/farrynController.cpp src/farrySkidSteerDrive.cpp ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+add_dependencies(
+  farryn_controller_node
+  farryn_controller_generate_messages_cpp
+  src/farrynController.cpp 
+  src/farrySkidSteerDrive.cpp 
+  ${${PROJECT_NAME}_EXPORTED_TARGETS} 
+  ${catkin_EXPORTED_TARGETS}
+)
 
 ## Specify libraries to link a library or executable target against
 target_link_libraries(farryn_controller_node

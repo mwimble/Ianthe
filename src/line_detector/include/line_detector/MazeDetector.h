@@ -38,28 +38,20 @@ public:
 
 	~MazeDetector();
 
-	void createControlWindow();
-
     static const bool debug_LinearCurveFit = false;
 	static CURVE_FIT linearCurveFit(std::vector<TLINE_SEGMENT> lineSegments);
 
 	void detectLines();
 
-	int getLowHueThreshold() { return lowHueThreshold; }
-
 	cv::Mat getOriginalImage() { return originalImage; }
 
-	cv::Mat getThresholdedImage() { return thresholdedImage; }
+	cv::Mat getRgbImage() { return rgb_image; }
+
+	double getScaleFactor() { return scaleFactor; }
 
 	bool imageFound() { return imageLoaded; }
 
 	void kmeansImage();
-
-	void scaleOriginalImage(double scaleFactor);
-
-	void setDefaultThresholding();
-
-	void thresholdImage();
 
 	void updateOriginalImage();
 
@@ -88,24 +80,12 @@ private:
 
 	// OpenCV objects.
 	cv::Mat originalImage;
+	cv::Mat grey_image;
 	cv::Mat hsvImage;
 	cv::Mat reshaped_image32f;
-	cv::Mat	thresholdedImage;
+	cv::Mat rgb_image;
 
-	// Thresholding limits.
-	static const int		kLowHueThreshold = 0;
-	static const int		kHighHueThreshold = 179;
-	static const int 		kLowSaturationThreshold = 0;
-	static const int 		kHighSaturationThreshold = 255;
-	static const int 		kLowValueThreshold = 0;
-	static const int 		kHighValueThreshold = 80;
 
-	int			lowHueThreshold;
-	int			highHueThreshold;
-	int 		lowSaturationThreshold;
-	int 		highSaturationThreshold;
-	int 		lowValueThreshold;
-	int 		highValueThreshold;
 	cv::Size	morphSize;
 
 	// Control window variables.
@@ -116,5 +96,8 @@ private:
 
 	void computeVerticalLines();
 	bool pixelRepresentsALine(uchar pixel) { return pixel == 255; }
+
+	void scaleOriginalImage(double scaleFactor);
+
 };
 #endif

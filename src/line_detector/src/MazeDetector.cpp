@@ -38,13 +38,12 @@ MazeDetector::MazeDetector(VideoCapture videoDevice)
 	nh_.getParam("debug", debug_);
 	ROS_INFO("[MazeDetector] PARAM debug: %s", debug_ ? "TRUE" : "false");
 	controlWindowName = "Ianthe Camera Controls";
-	setDefaultThresholding();
 	videoFeed = videoDevice;
 	videoDevice >> originalImage;
 	imageLoaded = videoDevice.read(originalImage);
 	if (imageLoaded) {
 	    // KMEANS takes too long, even on a Jetson, so reduce the image resolution to make it faster.
-	    double scaleFactor = IMAGE_COLS / originalImage.cols;
+	    scaleFactor = IMAGE_COLS / originalImage.cols;
 		scaleOriginalImage(scaleFactor);
 	    ROS_INFO("[MazeDetector] video capture scaleFactor: %5.3f, original cols: %d, original rows: %d, kmeans cols: %d, kmeans rows: %d",
 	    		 scaleFactor, 
@@ -60,14 +59,13 @@ MazeDetector::MazeDetector(const std::string testFileName)
 	struct stat buffer;
 
 	controlWindowName = "Ewyn Camera Controls";
-	setDefaultThresholding();
 	fileName = testFileName;
 	if (stat (testFileName.c_str(), &buffer) == 0) {
 		originalImage = imread(fileName);
 		imageLoaded = !originalImage.empty();
 
 	    // KMEANS takes too long, even on a Jetson, so reduce the image resolution to make it faster.
-	    double scaleFactor = IMAGE_COLS / originalImage.cols;
+	    scaleFactor = IMAGE_COLS / originalImage.cols;
 
 		if (imageLoaded) {
 			scaleOriginalImage(scaleFactor);
@@ -82,19 +80,9 @@ MazeDetector::~MazeDetector() {
 	videoFeed = VideoCapture();
 }
 
-void MazeDetector::createControlWindow() {
-	namedWindow(controlWindowName.c_str(), CV_WINDOW_AUTOSIZE);
-	cvCreateTrackbar2("Low Hue", controlWindowName.c_str(), &lowHueThreshold, 179, handleControlChange, this);
-	cvCreateTrackbar2("High Hue", controlWindowName.c_str(), &highHueThreshold, 179, handleControlChange, this);
-	cvCreateTrackbar2("Low Saturation", controlWindowName.c_str(), &lowSaturationThreshold, 255, handleControlChange, this);
-	cvCreateTrackbar2("High Saturation", controlWindowName.c_str(), &highSaturationThreshold, 255, handleControlChange, this);
-	cvCreateTrackbar2("Low Value", controlWindowName.c_str(), &lowValueThreshold, 255, handleControlChange, this);
-	cvCreateTrackbar2("High Value", controlWindowName.c_str(), &highValueThreshold, 255, handleControlChange, this);
-}
-
 void MazeDetector::detectLines() {
-	if (thresholdedImage.empty()) {
-		throw new std::string("No thresholded image to use");
+	if (grey_image.empty()) {
+		throw new std::string("[MazeDetector::detectLines] No image to use");
 	}
 
 	const int minAcceptableLineSize = 35 * scaleFactor;
@@ -107,10 +95,13 @@ void MazeDetector::detectLines() {
 	int startOfContiguousColumnsOfWhitePixels = -1;
 	std::vector<TLINE_SEGMENT> verticalLineSegments;
 	int midpoint = -1;
-	for (int row = thresholdedImage.rows - 1; row >= (thresholdedImage.rows / 2); row--) {
+
+	assert(grey_image.type() == CV_8UC1);
+	for (int row = grey_image.rows - 1; row >= (grey_image.rows / 2); row--) {
 		int lengthOfContiguousColumnsOfWhitePixels = 0;
-		for (int col = 0; col < thresholdedImage.cols; col++) {
-			if (pixelRepresentsALine(thresholdedImage.at<uchar>(row, col))) {
+		for (int col = 0; col < grey_image.cols; col++) {
+			uchar pixel = grey_image.at<uchar>(row, col);
+			if (pixelRepresentsALine(pixel)) {
 				if (startOfContiguousColumnsOfWhitePixels == -1) {
 					// Capture the start only once.
 					startOfContiguousColumnsOfWhitePixels = col;
@@ -121,6 +112,12 @@ void MazeDetector::detectLines() {
 				}
 			} else if (startOfContiguousColumnsOfWhitePixels != -1) {
 				// End of a contiguous line of pixels.
+				// ROS_INFO("detectLines row: %d, col: %d, lengthOfContiguousColumnsOfWhitePixels: %d, minAcceptableLineSize: %d,  maxAcceptableLineSize: %d",
+				// 		 row,
+				// 		 col,
+				// 		 lengthOfContiguousColumnsOfWhitePixels, 
+				// 		 minAcceptableLineSize, 
+				// 		 maxAcceptableLineSize);
 				if ((lengthOfContiguousColumnsOfWhitePixels >= minAcceptableLineSize) &&
 					(lengthOfContiguousColumnsOfWhitePixels <= maxAcceptableLineSize) &&
 					((midpoint == -1) ||
@@ -154,10 +151,11 @@ void MazeDetector::detectLines() {
 	int startOfContiguousRowsOfWhitePixels = -1;
 	std::vector<TLINE_SEGMENT> horizontalLineSegments;
 	midpoint = -1;
-	for (int col = 0; col < thresholdedImage.cols; col++) {
+	for (int col = 0; col < grey_image.cols; col++) {
 		int lengthOfContiguousRowsOfWhitePixels = 0;
-		for (int row = thresholdedImage.rows - 1; row >= (thresholdedImage.rows / 2); row--) {
-			if (pixelRepresentsALine(thresholdedImage.at<uchar>(row, col))) {
+		for (int row = grey_image.rows - 1; row >= (grey_image.rows / 2); row--) {
+			uchar pixel = grey_image.at<uchar>(row, col);
+			if (pixelRepresentsALine(pixel)) {
 				if (startOfContiguousRowsOfWhitePixels == -1) {
 					// Capture the start only once.
 					startOfContiguousRowsOfWhitePixels = row;
@@ -197,6 +195,8 @@ void MazeDetector::detectLines() {
 
 void MazeDetector::kmeansImage() {
 	struct timespec start;
+	int height = originalImage.rows;
+	int width = originalImage.cols;
     Mat labels;
     int cluster_number = 4; // 10; // This is arbitrary. I increased it until I got the results I wanted.
     TermCriteria criteria {TermCriteria::COUNT, 100, 1};
@@ -205,6 +205,99 @@ void MazeDetector::kmeansImage() {
     Mat centers;
     kmeans(reshaped_image32f, cluster_number, labels, criteria, 1, KMEANS_RANDOM_CENTERS, centers);
 	ProccTimePrint(start , "kmeans");
+
+	// Build a histogram of how many pixels occur for each label.
+	Mat labelHistogram(centers.rows, 1, CV_32S, Scalar(0));
+    MatConstIterator_<int> labelFirst = labels.begin<int>();
+    MatConstIterator_<int> labelLast = labels.end<int>();
+	while (labelFirst != labelLast) {
+		labelHistogram.at<int>(*labelFirst, 0) += 1;
+		labelFirst++;
+	}
+
+	// Sort the histogram, descenting.
+	Mat histSortIdx;
+	sortIdx(labelHistogram, histSortIdx, SORT_EVERY_COLUMN + SORT_DESCENDING);
+	// cout << "labelHistogram..." << endl << labelHistogram << endl;
+	// ProccTimePrint(start , "sort histogram");
+
+	// // Print out the sort index of each cluster.
+	// cout << "histSortIdx..." << endl << histSortIdx << endl;
+
+ //    // Print out the number of label rows (i.e., number of pixels) and label columns (there is only one).
+ //    cout << "labels: " << labels.rows << " " << labels.cols << endl;
+
+ //    // Print out the number of cluster rows (64, a.k.a centers) and cluster columns (3--r, g, b).
+ //    cout << "centers: " << centers.rows << " " << centers.cols << endl;
+    assert(labels.type() == CV_32SC1);
+    assert(centers.type() == CV_32FC1);
+     
+    rgb_image = Mat(height, width, CV_8UC3);
+    MatIterator_<Vec3b> rgb_first = rgb_image.begin<Vec3b>();
+    MatIterator_<Vec3b> rgb_last = rgb_image.end<Vec3b>();
+    MatConstIterator_<int> label_first = labels.begin<int>();
+     
+    Mat centers_u8;
+    centers.convertTo(centers_u8, CV_8UC1, 255.0); // Convert the original centers to an array of clusters, scaled from [0..1) => [0..255].
+    Mat centers_u8c3 = centers_u8.reshape(3);	// Convert to 3 columns (R, G, B).
+ 
+    // Find the center with the min intensity.
+    int minIntensity = 99999;
+    int minIntensityCenter = -1;
+    for (int center = 0; center < centers.rows; center++) {
+        Vec3b vec3b =  centers_u8c3.ptr<Vec3b>(center)[0];
+        int intensity = 0.114 * vec3b[0] + 0.587 * vec3b[1] + 0.299 * vec3b[2];
+        if (intensity < minIntensity) {
+            minIntensity = intensity;
+            minIntensityCenter = center;
+        }
+    }
+
+    // cout << "minIntensityCenter: " << minIntensityCenter << ", minIntensity: " << minIntensity << endl;
+
+    // Blacken out everything that is not of interest.
+    while ( rgb_first != rgb_last ) {
+    		int cluster = *label_first;
+            Vec3b& rgb = centers_u8c3.ptr<Vec3b>(cluster)[0];
+            bool makeBlack = false;
+
+            // if (cluster == histSortIdx.at<int>(0)) {
+            // 	rgb = Vec3b(0, 0, 0);
+            // } else if (cluster == histSortIdx.at<int>(1)) {
+            // 	rgb = Vec3b(0, 0, 0);
+            // } else if (cluster == histSortIdx.at<int>(2)) {
+            // 	rgb = Vec3b(0, 0, 0);
+            // }
+
+            if (cluster != minIntensityCenter) rgb = Vec3b(0, 0, 0);
+            else rgb = Vec3b(255, 255, 255);
+
+            *rgb_first = rgb;
+            ++rgb_first;
+            ++label_first;
+    }
+
+	// Remove small objects from the forground.
+	erode(rgb_image, rgb_image, getStructuringElement(MORPH_ELLIPSE, morphSize));
+	dilate(rgb_image, rgb_image, getStructuringElement(MORPH_ELLIPSE, morphSize));
+	cvtColor(rgb_image, grey_image, CV_BGR2GRAY);
+
+  //   // Now add an annotation to the resulting picture. Add colored boxes to the right edge
+  //   // of the picture, and print the cluster number and and histogram count next to the box.
+  //   rectangle(rgb_image, Point(width - 25, 0), Point(width, (centers.rows * 8) + 12), Scalar::all(255), CV_FILLED);
+  //   for (int cluster = 0; cluster < centers.rows; cluster++) {
+		// Vec3b vec3b =  centers_u8c3.ptr<Vec3b>(cluster)[0];
+  //       int intensity = 0.114 * vec3b[0] + 0.587 * vec3b[1] + 0.299 * vec3b[2];
+		// Scalar color(vec3b);
+		// // cout << "cluster: " << cluster
+		// // 	 << ", int: " << intensity
+		// // 	 << ", centers.rows: " << centers.rows
+		// // 	 << endl;
+		// rectangle(rgb_image, Point(width - 20, cluster * 8), Point(width, (cluster * 8) + 8), color, CV_FILLED);
+		// char str[128];
+		// sprintf(str, "%d %d", cluster, labelHistogram.at<int>(cluster, 0));
+		// putText(rgb_image, str, Point(width - 60, (cluster * 8) + 7), FONT_HERSHEY_PLAIN, 0.5, Scalar::all(0), 1, 8);
+  //   }
 }
 
 void MazeDetector::scaleOriginalImage(double scaleFactor) {
@@ -214,43 +307,14 @@ void MazeDetector::scaleOriginalImage(double scaleFactor) {
 		// scaleSize.width *= scaleFactor;
 		// resize(originalImage, originalImage, scaleSize);
 
-	    Mat resizedImage;
-	    resize(originalImage, resizedImage, Size(), scaleFactor, scaleFactor, INTER_AREA);
+	    resize(originalImage, originalImage, Size(), scaleFactor, scaleFactor, INTER_AREA);
 
-	    Mat reshaped_image = resizedImage.reshape(1, resizedImage.cols * resizedImage.rows);
-	    cout << "reshaped image: " << reshaped_image.rows << ", " << reshaped_image.cols << endl;
+	    Mat reshaped_image = originalImage.reshape(1, originalImage.cols * originalImage.rows);
 	    assert(reshaped_image.type() == CV_8UC1);
 
 	    reshaped_image.convertTo(reshaped_image32f, CV_32FC1, 1.0 / 255.0);
-	    cout << "reshaped image 32f: " << reshaped_image32f.rows << ", " << reshaped_image32f.cols << endl;
 	    assert(reshaped_image32f.type() == CV_32FC1);
 	}
-}
-
-void MazeDetector::setDefaultThresholding() {
-	lowHueThreshold = kLowHueThreshold;
-	highHueThreshold = kHighHueThreshold;
-	lowSaturationThreshold = kLowSaturationThreshold;
-	highSaturationThreshold = kHighSaturationThreshold;
-	lowValueThreshold = kLowValueThreshold;
-	highValueThreshold = kHighValueThreshold;
-}
-
-void MazeDetector::thresholdImage() {
-	Mat hsvImage;
-	cvtColor(originalImage, hsvImage, COLOR_BGR2HSV);
-	inRange(hsvImage, 
-			Scalar(lowHueThreshold, lowSaturationThreshold, lowValueThreshold),
-			Scalar(highHueThreshold, highSaturationThreshold, highValueThreshold),
-			thresholdedImage);
-
-	// Remove small objects from the forground.
-	erode(thresholdedImage, thresholdedImage, getStructuringElement(MORPH_ELLIPSE, morphSize));
-	dilate(thresholdedImage, thresholdedImage, getStructuringElement(MORPH_ELLIPSE, morphSize));
-
-	// Fill small holes in the background;
-	// dilate(thresholdedImage, thresholdedImage, getStructuringElement(MORPH_ELLIPSE, morphSize));
-	// erode(thresholdedImage, thresholdedImage, getStructuringElement(MORPH_ELLIPSE, morphSize));
 }
 
 void MazeDetector::updateOriginalImage() {
@@ -290,7 +354,7 @@ MazeDetector::CURVE_FIT MazeDetector::linearCurveFit(std::vector<TLINE_SEGMENT> 
         sumx2 = sumx2 + x * x;
         sumy = sumy + y;
         sumxy = sumxy + x * y;
-//        if (debug_LinearCurveFit) { cout << x << "\t" << y << endl; }
+	//        if (debug_LinearCurveFit) { cout << x << "\t" << y << endl; }
     }
 
     float t1 = sumx2 * sumy;

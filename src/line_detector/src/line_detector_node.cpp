@@ -31,7 +31,6 @@ int main( int argc, char** argv ) {
     }
     
     MazeDetector camera = MazeDetector(cap);
-    if (showImage) camera.createControlWindow();
 
 	const int minAcceptableHorizontalLineLength = 120;
 	
@@ -40,8 +39,7 @@ int main( int argc, char** argv ) {
 		try {
 	        camera.updateOriginalImage();
 	        camera.kmeansImage();
-	        // camera.thresholdImage();
-	        // camera.detectLines();
+	        camera.detectLines();
 	        
 	        Size size = camera.getOriginalImage().size();
 	        ros::Time currentTime = ros::Time::now();
@@ -100,8 +98,8 @@ int main( int argc, char** argv ) {
 		        cv::line(ti, Point(0, camera.horizontalCurve.a), Point(size.width, camera.horizontalCurve.b * size.width + camera.horizontalCurve.a), verticalLineColor, 1, 8);
 	
 		        if (showImage) {
-			        imshow("Original Image", camera.getOriginalImage());
-			        imshow("Thresholded Image", camera.getThresholdedImage());
+			        imshow("Scaled Original Image", camera.getOriginalImage());
+			        imshow("RGB Image", camera.getRgbImage());
 			        if (waitKey(3) == 27) { return 0; }
 			    }
 

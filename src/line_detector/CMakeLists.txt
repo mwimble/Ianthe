@@ -146,11 +146,12 @@ add_executable(
 
 ## Add cmake target dependencies of the executable
 ## same as for the library above
-#add_dependencies(
-#	line_detector_node
-#	${${PROJECT_NAME}_EXPORTED_TARGETS}
-#	${catkin_EXPORTED_TARGETS}
-#)
+add_dependencies(
+	line_detector_node
+	line_detector_generate_messages_cpp
+	${${PROJECT_NAME}_EXPORTED_TARGETS}
+	${catkin_EXPORTED_TARGETS}
+)
 
 ## Specify libraries to link a library or executable target against
 target_link_libraries(line_detector_node
