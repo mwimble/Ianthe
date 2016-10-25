@@ -92,6 +92,9 @@ private:
 	// Pose at start of travel.
 	geometry_msgs::Pose startingPose_;
 
+	// For publishing strategy status.
+	ros::Publisher strategyStatusPublisher_;
+
 	GotoCrossing();
 
 	// Process line_detector messages.

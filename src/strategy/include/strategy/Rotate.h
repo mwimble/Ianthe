@@ -72,6 +72,9 @@ private:
 
 	static StrategyContext& strategyContext;
 
+	// For publishing strategy status.
+	ros::Publisher strategyStatusPublisher_;
+
 	Rotate();
 
 	// Process IMU messages.

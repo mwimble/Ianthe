@@ -1,4 +1,5 @@
 #include <ros/ros.h>
+#include <actionlib_msgs/GoalStatus.h>
 #include "std_msgs/String.h"
 #include "tf/transform_datatypes.h"
 #include <unistd.h>
@@ -30,6 +31,7 @@ Rotate::Rotate() :
 	imuSub_ = nh_.subscribe(imuTopicName_.c_str(), 1, &Rotate::imuTopicCb, this);
 	cmdVelPub_ = nh_.advertise<geometry_msgs::Twist>(cmdVelTopicName_.c_str(), 1);
 	lineDetectorSub_ = nh_.subscribe(lineDetectorTopicName_.c_str(), 1, &Rotate::lineDetectorTopicCb, this);
+	strategyStatusPublisher_ = nh_.advertise<actionlib_msgs::GoalStatus>("/strategy", 1);
 }
 
 Rotate& Rotate::Singleton() {
@@ -90,16 +92,24 @@ void Rotate::publishCurrentStragety(string strategy) {
 }
 
 StrategyFn::RESULT_T Rotate::tick() {
-	RESULT_T result = FATAL;
-	bool keepRotating = false;
-	geometry_msgs::Twist cmdVel;
-	double verticalError;
+	geometry_msgs::Twist 		cmdVel;
+	actionlib_msgs::GoalStatus 	goalStatus;
+	bool 						keepRotating = false;
+	RESULT_T 					result = FATAL;
+	ostringstream 				ss;
+	double 						verticalError;
+
+	goalStatus.goal_id.stamp = ros::Time::now();
+	goalStatus.goal_id.id = "Rotate";
+	goalStatus.status = actionlib_msgs::GoalStatus::ACTIVE;
 
 	if (strategyContext.needToFollowLine) {
 		if (debug_) {
 			ROS_INFO("[Rotate] Still following line");
 		}
 
+		goalStatus.text = "Still following line";
+		strategyStatusPublisher_.publish(goalStatus);
 		result = SUCCESS;
 		return result;
 	}
@@ -109,6 +119,8 @@ StrategyFn::RESULT_T Rotate::tick() {
 			ROS_INFO("[Rotate] no need to rotate");
 		}
 
+		goalStatus.text = "No need to follow line";
+		strategyStatusPublisher_.publish(goalStatus);
 		result = SUCCESS;
 		return result;
 	}
@@ -116,6 +128,7 @@ StrategyFn::RESULT_T Rotate::tick() {
 
 	switch (state) {
 		case kROTATING_START:
+			ss << "kROTATING_START ";
 			startYaw_ = yaw_;
 			if (strategyContext.needToRotateLeft180) {
 				state = kROTATING_LEFT;
@@ -130,11 +143,16 @@ StrategyFn::RESULT_T Rotate::tick() {
 			} else {
 				result = FATAL;
 				if (debug_) ROS_INFO("[Rotate] BAD GOAL--neither kROTATING_LEFT nor kROTATING_RIGHT");
+				ss << "BAD GOAL--neither kROTATING_LEFT nor kROTATING_RIGHT";
 			}
 
+			ss << "new state: " << (state == kROTATING_LEFT ? "kROTATING_LEFT" : (state == kROTATING_LEFT ? "kROTATING_LEFT" : "UNKNOWN"));
+			ss << ", startYaw_: " << startYaw_;
+			ss << ", goalYaw_: " << goalYaw_;
 			break;
 
 		case kROTATING_LEFT:
+			ss << "kROTATING_LEFT ";
 			verticalError = verticalIntercept - 160;
 			if (verticalError < 0) verticalError = -verticalError;
 			keepRotating = (verticalLineFound && (verticalError > 7));
@@ -173,9 +191,17 @@ StrategyFn::RESULT_T Rotate::tick() {
 				}
 			}
 
+			ss << "keepRotating: " << keepRotating;
+			ss << ", verticalError: " << verticalError;
+			ss << ", yaw_: " << yaw_;
+			ss << ", goalYaw_: " << goalYaw_;
+			ss << ", verticalLineFound: " << (verticalLineFound ? "TRUE" : "false");
+			ss << ", moving with x: " << cmdVel.linear.x << " and z: " << cmdVel.angular.z;
 			break;
 
 		case kROTATING_RIGHT:
+			ss << "kROTATING_LEFT ";
+			//#####
 			if (startYaw_ < goalYaw_) {
 				keepRotating = (yaw_ < (goalYaw_ - 90)) || (yaw_ > goalYaw_);
 			} else {
@@ -201,10 +227,21 @@ StrategyFn::RESULT_T Rotate::tick() {
 				}
 			}
 
+			ss << "keepRotating: " << keepRotating;
+			ss << ", verticalError: " << verticalError;
+			ss << ", yaw_: " << yaw_;
+			ss << ", goalYaw_: " << goalYaw_;
+			ss << ", verticalLineFound: " << (verticalLineFound ? "TRUE" : "false");
+			ss << ", moving with x: " << cmdVel.linear.x << " and z: " << cmdVel.angular.z;
 			break;
 			
+		otherwise:
+			ss << "UNKNOWN STATE";
+			break;
 	}
 
+	goalStatus.text = ss.str();
+	strategyStatusPublisher_.publish(goalStatus);
 	return result;
 }
 
