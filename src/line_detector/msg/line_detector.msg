@@ -1,5 +1,10 @@
 Header header
 
+int32 sequence
+
+int32 cameraWidth
+int32 cameraHeight
+
 int32 horizontalBottom
 int32 horizontalLeft
 int32 horizontalLength

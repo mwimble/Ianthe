@@ -13,12 +13,18 @@
 	<arg name="show_image" default="false" />
 
 	<include file="$(find farryn_controller)launch/farryn.launch" />
+
 	<include file="$(find kaimi_imu)launch/kaimi_imu.launch.xml" />
+
 	<include file="$(find line_detector)launch/line_detector.launch" >
 		<arg name="debug_line_detector" value="$(arg debug_line_detector)" />
 		<arg name="save_images" value="$(arg save_images)" />
 		<arg name="show_image" value="$(arg show_image)" />
 	</include>
+
+	<node pkg="rosbag" name="bag_record" type="rosbag"
+		args="record -o /home/pi/$(anon bag) /strategy /current_stragety /cmd_vel /lineDetect /imu"
+		/>
 
 	<node pkg="strategy" name="strategy" type="strategy_node" respawn="false" output="screen"  launch-prefix="$(arg launchPrefix)">
 		<param name="cmd_vel_topic_name" value="$(arg cmd_vel_topic_name)" type="string" />

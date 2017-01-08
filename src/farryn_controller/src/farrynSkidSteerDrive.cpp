@@ -34,13 +34,13 @@
 
 // 7.5 inches in meters.
 //#define axle_width_ 0.1905
-#define axle_width_ 0.21166666666667
-#define calibration_correction_factor_ 0.66674963995519
+#define axle_width_ 0.255 //0.21166666666667
+#define calibration_correction_factor_ 1.122 // 0.66674963995519
 #define quad_pulse_per_meter_ 6353.4523937932416
 
 // Max no-load speed = 160 RPM
-#define meters_per_revolution 0.1888736903376
-#define pulses_per_inch 161.37769080234834
+//#define meters_per_revolution 0.392699081698724 // 0.1888736903376
+//#define pulses_per_inch 161.37769080234834
 
 boost::mutex roboClawLock;
 
@@ -85,13 +85,13 @@ FarrynSkidSteerDrive::FarrynSkidSteerDrive() :
 	MAX_COMMAND_RETRIES = 5;
 	DEBUG = false;
 
-	M1_P = 8908.51572;
-	M2_P = 9960.05140;
-	M1_I = 1038.91467;
-	M2_I = 490.19002;
-	M1_QPPS = 6432;
-	M2_QPPS = 6116;
-	AXLE_WIDTH = 0.188;
+	M1_P =  8762.98571;
+	M2_P = 9542.41265;
+	M1_I = 1535.49646;
+	M2_I = 1773.65086;
+	M1_QPPS = 3562;
+	M2_QPPS = 3340;
+	AXLE_WIDTH = 0.125;
 
 	rosNode = new ros::NodeHandle(); //### namespace
 

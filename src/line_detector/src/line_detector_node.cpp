@@ -35,6 +35,8 @@ int main( int argc, char** argv ) {
 	const int minAcceptableHorizontalLineLength = 120;
 	
 	ros::Rate r(20);
+	int nextSequence = 0;
+
 	while (ros::ok()) {
 		try {
 	        camera.updateOriginalImage();
@@ -44,6 +46,10 @@ int main( int argc, char** argv ) {
 	        Size size = camera.getOriginalImage().size();
 	        ros::Time currentTime = ros::Time::now();
 	        line_detector::line_detector ld;
+
+	        ld.sequence = nextSequence++;
+	        ld.cameraWidth = size.width;
+	        ld.cameraHeight = size.height;
 
 	        ld.horizontalLowerLeftX = camera.horizontalLowerLeftX;
 	        ld.horizontalLowerLeftY = camera.horizontalLowerLeftY;
@@ -107,8 +113,10 @@ int main( int argc, char** argv ) {
 					ros::Time currentTime = ros::Time::now();
 					double secs = currentTime.toSec();
 					char fn[128];
-					sprintf(fn, "/home/pi/images/%-20.9f.jpg", secs);
-					imwrite(fn, camera.getOriginalImage());
+					// sprintf(fn, "/home/pi/images/%-20.9f-ORIG.jpg", secs);
+					// imwrite(fn, camera.getOriginalImage());
+					sprintf(fn, "/home/pi/images/%-20.9f-PROC.jpg", secs);
+					imwrite(fn, camera.getRgbImage());
 				}
 		    }
 

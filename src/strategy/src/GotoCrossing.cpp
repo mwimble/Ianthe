@@ -14,8 +14,9 @@ GotoCrossing::GotoCrossing() :
 	horizontalLineFound(false),
 	lineDetectorMsgReceived(false),
 	odometryMessageReceived_(false),
+	processedSequence(0),
 	sawHorizontalLine(false),
-	state(kLOOKING_FOR_HORIZONTAL_LINE_START),
+	state_(kLOOKING_FOR_HORIZONTAL_LINE_START),
 	verticalLineFound(false) {
 
 	nh_ = ros::NodeHandle("~");
@@ -92,9 +93,14 @@ StrategyFn::RESULT_T GotoCrossing::tick() {
 	RESULT_T 					result = FATAL;
 	ostringstream 				ss;
 	actionlib_msgs::GoalStatus 	goalStatus;
-	double 						zCorrection = lastLineDetectorMsg.verticalCurveB * 3;
-	if (zCorrection > 1.0) zCorrection = 1.0;
-	if (zCorrection < -1.0) zCorrection = -1.0;
+//	double 						zCorrection = lastLineDetectorMsg.verticalCurveB * 10;
+	double 						zCorrection = ((lastLineDetectorMsg.cameraWidth / 2) - verticalIntercept) / 30.0;
+	const double maxZConnection = 3.0;
+	if (zCorrection > maxZConnection) zCorrection = maxZConnection;
+	if (zCorrection < -maxZConnection) zCorrection = -maxZConnection;
+
+	if (processedSequence == lastLineDetectorMsg.sequence) return RUNNING;
+	processedSequence = lastLineDetectorMsg.sequence;
 
 	goalStatus.goal_id.stamp = ros::Time::now();
 	goalStatus.goal_id.id = "GotoCrossing";
@@ -120,7 +126,7 @@ StrategyFn::RESULT_T GotoCrossing::tick() {
 	}
 
 	ss << "[x:" << lastOdomMsg_.pose.pose.position.x << ", y:" << lastOdomMsg_.pose.pose.position.y << "]";
-	ss << ",state: " << (state == kLOOKING_FOR_HORIZONTAL_LINE_START ? "kLOOKING_FOR_HORIZONTAL_LINE_START" : "kLOOKING_FOR_HORIZONTAL_LINE_END");
+	ss << ",state_: " << stateName(state_);
 	ss << ", verticalLineFound: " << verticalLineFound ? "TRUE" : "false";
 	ss << ", sawHorizontalLine: " << sawHorizontalLine ? "TRUE" : "false";
 	ss << ", verticalIntercept: " << verticalIntercept;
@@ -130,8 +136,8 @@ StrategyFn::RESULT_T GotoCrossing::tick() {
 	strategyStatusPublisher_.publish(goalStatus);
 	ss.str("");
 	if (debug_) {
-		ROS_INFO("[GotoCrossing] state: %s, verticalLineFound: %s, sawHorizontalLine: %s, verticalIntercept: %7.4f, verticalCurveB: %7.4f, zCorrection: %7.4f",
-			state == kLOOKING_FOR_HORIZONTAL_LINE_START ? "kLOOKING_FOR_HORIZONTAL_LINE_START" : "kLOOKING_FOR_HORIZONTAL_LINE_END",
+		ROS_INFO("[GotoCrossing] state_: %s, verticalLineFound: %s, sawHorizontalLine: %s, verticalIntercept: %7.4f, verticalCurveB: %7.4f, zCorrection: %7.4f",
+			stateName(state_).c_str(),
 			verticalLineFound ? "TRUE" : "false",
 			sawHorizontalLine ? "TRUE" : "false",
 		    verticalIntercept,
@@ -139,7 +145,9 @@ StrategyFn::RESULT_T GotoCrossing::tick() {
 		    zCorrection);
 	}
 
-	switch (state) {
+	double forwardVelocity = abs(zCorrection) > 0.1 ? 0.0 : 0.05;
+
+	switch (state_) {
 		case kLOOKING_FOR_HORIZONTAL_LINE_START:
 			ss << "kLOOKING_FOR_HORIZONTAL_LINE_START ";
 			publishCurrentStragety(strategyLookingForHorizontalLineStart);
@@ -148,12 +156,12 @@ StrategyFn::RESULT_T GotoCrossing::tick() {
 				ss << "but NOT verticalLineFound";
 				result = RUNNING;
 			} else if (horizontalLineFound) {
-				state = kLOOKING_FOR_HORIZONTAL_LINE_END;
+				state_ = kLOOKING_FOR_HORIZONTAL_LINE_END;
 				strategyContext.needToRotateLeft180 = horizontalToLeft;
 				strategyContext.needToRotateRight180 = horizontalToRight;
 				sawHorizontalLine = true;
 				// Move until not found horizontal line.
-				cmdVel.linear.x = 0.1;
+				cmdVel.linear.x = forwardVelocity;
 				cmdVel.angular.z = zCorrection;
 				cmdVelPub_.publish(cmdVel);
 				ss << "and horizontalLineFound, new kLOOKING_FOR_HORIZONTAL_LINE_END";
@@ -164,7 +172,7 @@ StrategyFn::RESULT_T GotoCrossing::tick() {
 			} else {
 				// Move until found horizontal line.
 				geometry_msgs::Twist cmdVel;
-				cmdVel.linear.x = 0.1;
+				cmdVel.linear.x = forwardVelocity;
 				cmdVel.angular.z = zCorrection;
 				cmdVelPub_.publish(cmdVel);
 				ss << "verticalLineFound but no horizontalLineFound";
@@ -179,7 +187,7 @@ StrategyFn::RESULT_T GotoCrossing::tick() {
 			publishCurrentStragety(strategyLookingForHorizontalLineEnd);
 			if (horizontalLineFound) {
 				// Move until no longer see horizontal line.
-				cmdVel.linear.x = 0.1;
+				cmdVel.linear.x = forwardVelocity;
 				cmdVel.angular.z = 0.0;
 				cmdVelPub_.publish(cmdVel);
 				strategyContext.needToRotateLeft180 |= horizontalToLeft;
@@ -194,7 +202,7 @@ StrategyFn::RESULT_T GotoCrossing::tick() {
 				endingPose_ = lastOdomMsg_.pose.pose;
 				distanceTraveledToLineEnd_ = distanceBetweenPoses(startingPose_, endingPose_);
 				if (debug_) ROS_INFO("[GotoCrossing] distance traveled to line end: %7.4f", distanceTraveledToLineEnd_);
-				state = kMOVING_TO_CENTERING_POSITION;
+				state_ = kMOVING_TO_CENTERING_POSITION;
 				ss << "NOT horizontalLineFound so kMOVING_TO_CENTERING_POSITION next";
 				ss << ", distanceTraveledToLineEnd_: " << distanceTraveledToLineEnd_;
 				result = RUNNING;
@@ -213,7 +221,7 @@ StrategyFn::RESULT_T GotoCrossing::tick() {
 			}
 			if (totalPostTraveledDistance  < 0.0762) {
 				// Need to go further to find centering position.
-				cmdVel.linear.x = 0.1;
+				cmdVel.linear.x = forwardVelocity;
 				cmdVel.angular.z = 0.0;
 				cmdVelPub_.publish(cmdVel);
 				ss << "not traveled far enough yet";

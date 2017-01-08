@@ -27,7 +27,8 @@ private:
 		kMOVING_TO_CENTERING_POSITION
 	} STATE;
 
-	STATE state;
+	STATE state_;
+	int processedSequence;
 
 	// For moving to a crossing line.
 	int horizontalLineWidth;
@@ -112,6 +113,15 @@ public:
 	string name();
 
 	static GotoCrossing& Singleton();
+
+	string stateName(STATE state) {
+		switch (state) {
+			case kLOOKING_FOR_HORIZONTAL_LINE_START: return "kLOOKING_FOR_HORIZONTAL_LINE_START";
+			case kLOOKING_FOR_HORIZONTAL_LINE_END:	 return "kLOOKING_FOR_HORIZONTAL_LINE_END";
+			case kMOVING_TO_CENTERING_POSITION:		 return "kMOVING_TO_CENTERING_POSITION";
+			default:								 return "!!UNKNOWN!!";
+		}
+	}
 
 };
 
