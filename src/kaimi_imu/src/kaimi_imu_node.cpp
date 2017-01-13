@@ -1,6 +1,7 @@
 #include <ros/ros.h>
 #include <ros/console.h>
 #include <sensor_msgs/Imu.h>
+#include <tf/transform_datatypes.h>
 #include "MPU6050_6Axis_MotionApps20.h"
 
 int main(int argc, char** argv) {
@@ -8,6 +9,9 @@ int main(int argc, char** argv) {
 	ros::NodeHandle nh;
 	ros::Publisher imuPub;
 
+	bool showImu;
+	nh.getParam("showImu", showImu);
+	ROS_INFO("[kaimi_imu_node] showImu: %S", showImu ? "TRUE" : "false");
 	imuPub = nh.advertise<sensor_msgs::Imu>("imu", 20);
 	ros::Rate rate(50); // Loop rate
 
@@ -60,6 +64,8 @@ int main(int argc, char** argv) {
 			mpu.resetFIFO();
 			//ROS_INFO("[kaimi_imu] FIFO overflow!");
 		} else if (fifoCount >= 42) {
+			imu.header.frame_id = "base_link";
+			imu.header.stamp =ros::Time::now();
 			// Read a packet from the FIFO.
 			mpu.getFIFOBytes(fifoBuffer, packetSize);
 			mpu.dmpGetQuaternion(&q, fifoBuffer);
@@ -89,6 +95,14 @@ int main(int argc, char** argv) {
 			imu.angular_velocity.z = gyro[2] * 25.0;
 			//ROS_INFO("gyro x: %d, y: %d, z: %d -- %f, %f, %f", gyro[0], gyro[1], gyro[2], imu.angular_velocity.x, imu.angular_velocity.y, imu.angular_velocity.z);
 			imuPub.publish(imu);
+			if (showImu) {	
+				tf::Quaternion qq;
+				double roll, pitch, yaw;
+				tf::quaternionMsgToTF(imu.orientation, qq);
+				tf::Matrix3x3(qq).getRPY(roll, pitch, yaw);
+				ROS_INFO("[kaimi_imu_node] roll: %7.2f, pitch: %7.2f, yaw: %7.2f", roll, pitch, yaw);
+
+			}
 		}
 	}
 }
