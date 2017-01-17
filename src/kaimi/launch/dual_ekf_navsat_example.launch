@@ -12,12 +12,17 @@
 
 <launch>
 
-  <rosparam command="load" file="$(find kaimi)/params/dual_ekf_navsat_example.yaml" />
+  <!--rosparam command="load" file="$(find kaimi)/params/dual_ekf_navsat_example.yaml" /-->
 
-  <node pkg="robot_localization" type="ekf_localization_node" name="ekf_se_odom" clear_params="true"/>
+  <node pkg="robot_localization" type="ekf_localization_node" name="ekf_se_odom" clear_params="true">
+    <rosparam command="load" file="$(find kaimi)/params/dual_ekf_navsat_example.yaml" />
+    <param name="debug" value="true" />
+  </node>
 
   <node pkg="robot_localization" type="ekf_localization_node" name="ekf_se_map" clear_params="true">
+    <rosparam command="load" file="$(find kaimi)/params/dual_ekf_navsat_example.yaml" />
     <remap from="odometry/filtered" to="odometry/filtered_map"/>
+    <param name="debug" value="true" />
   </node>
 
   <node pkg="robot_localization" type="navsat_transform_node" name="navsat_transform" clear_params="true">

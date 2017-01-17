@@ -3,7 +3,7 @@
 	<arg name="doImu" default="true" />
 	<arg name="doMotor" default="true" />
 	<arg name="showImu" default="false" />
-	
+
 	<include if="$(arg doImu)" file="$(find kaimi_imu)/launch/kaimi_imu.launch">
 		<arg name="showImu" value="$(arg showImu)" />
 	</include>
@@ -16,4 +16,7 @@
     <node if="$(arg doMotor)" pkg="farryn_controller" name="motor_controller_node" type="farryn_controller_node" output="screen">
         <rosparam command="load" file="$(find farryn_controller)/cfg/farryn_controller.yaml"/>
     </node>
+
+    <include file="$(find kaimi)/launch/dual_ekf_navsat_example.launch">
+    </include>
 </launch>
