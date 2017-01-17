@@ -6,44 +6,44 @@
 
 int main(int argc, char** argv) {
 	ros::init(argc, argv, "kaimi_imu_node");
-	ros::NodeHandle nh;
+	ros::NodeHandle nh("~");
 	ros::Publisher imuPub;
 
 	bool showImu;
 	nh.getParam("showImu", showImu);
-	ROS_INFO("[kaimi_imu_node] showImu: %S", showImu ? "TRUE" : "false");
+	ROS_INFO("[kaimi_imu_node] showImu: %s", showImu ? "TRUE" : "false");
 	imuPub = nh.advertise<sensor_msgs::Imu>("imu", 20);
 	ros::Rate rate(50); // Loop rate
 
 	MPU6050 mpu;
 
-    ROS_INFO("[kaimi_imu] Initializing I2C devices");
+    ROS_INFO("[kaimi_imu_node] Initializing I2C devices");
     mpu.initialize();
 
-    ROS_INFO("[kaimi_imu] Testing device connections...\n");
+    ROS_INFO("[kaimi_imu_node] Testing device connections...\n");
     bool mpuConnectionOk = mpu.testConnection();
     if (!mpuConnectionOk) {
-    	ROS_FATAL("[kaimi_imu] Unable to connect to MPU6050");
+    	ROS_FATAL("[kaimi_imu_node] Unable to connect to MPU6050");
     	return -1;
     } else {
-    	ROS_INFO("[kaimi_imu] IMU connection successful");
+    	ROS_INFO("[kaimi_imu_node] IMU connection successful");
     }
 
-    ROS_INFO("[kaimi_imu] Initializing the DMP");
+    ROS_INFO("[kaimi_imu_node] Initializing the DMP");
     uint8_t devStatus = mpu.dmpInitialize();
     if (devStatus != 0) {
-    	ROS_FATAL("[kaimi_imu] Unable to initialize the DMP");
+    	ROS_FATAL("[kaimi_imu_node] Unable to initialize the DMP");
     	return -1;
     } else {
-    	ROS_INFO("[kaimi_imu] DMP successfully initialized");
+    	ROS_INFO("[kaimi_imu_node] DMP successfully initialized");
     }
 
-    ROS_INFO("[kaimi_imu] Enabling the DMP");
+    ROS_INFO("[kaimi_imu_node] Enabling the DMP");
     mpu.setDMPEnabled(true);
 
     uint8_t mpuIntStatus = mpu.getIntStatus();
     uint16_t packetSize = mpu.dmpGetFIFOPacketSize();
-    ROS_INFO("[kaimi_imu] INT status: %d, packetSize: %d", mpuIntStatus, packetSize);
+    ROS_INFO("[kaimi_imu_node] INT status: %d, packetSize: %d", mpuIntStatus, packetSize);
 
     uint8_t fifoBuffer[64];
     Quaternion q;
@@ -62,7 +62,7 @@ int main(int argc, char** argv) {
 		if (fifoCount == 1024) {
 			// Reset so we can continue cleanly.
 			mpu.resetFIFO();
-			//ROS_INFO("[kaimi_imu] FIFO overflow!");
+			//ROS_INFO("[kaimi_imu_node] FIFO overflow!");
 		} else if (fifoCount >= 42) {
 			imu.header.frame_id = "base_link";
 			imu.header.stamp =ros::Time::now();
