@@ -4,7 +4,24 @@
 #include <tf/transform_datatypes.h>
 #include "MPU6050_6Axis_MotionApps20.h"
 
+void setup_covariance(boost::array<double, 9> &cov, double stdev) {
+    std::fill(cov.begin(), cov.end(), 0.0);
+    if (stdev == 0.0)
+        cov[0] = -1.0;
+    else {
+        cov[0 + 0] = cov[3 + 1] = cov[6 + 2] = std::pow(stdev, 2);
+    }
+}
+
 int main(int argc, char** argv) {
+	boost::array<double, 9> linear_acceleration_cov;
+	boost::array<double, 9> angular_velocity_cov;
+	boost::array<double, 9> orientation_cov;
+
+    setup_covariance(linear_acceleration_cov, 0.0003);
+    setup_covariance(angular_velocity_cov, 0.02 * (M_PI / 180.0));
+    setup_covariance(orientation_cov, 1.0);
+
 	ros::init(argc, argv, "kaimi_imu_node");
 	ros::NodeHandle nh("~");
 	ros::Publisher imuPub;
@@ -67,6 +84,10 @@ int main(int argc, char** argv) {
 			imu.header.frame_id = "base_link";
 			imu.header.stamp =ros::Time::now();
 			// Read a packet from the FIFO.
+		    imu.orientation_covariance = orientation_cov;
+		    imu.angular_velocity_covariance = angular_velocity_cov;
+		    imu.linear_acceleration_covariance = linear_acceleration_cov;
+
 			mpu.getFIFOBytes(fifoBuffer, packetSize);
 			mpu.dmpGetQuaternion(&q, fifoBuffer);
 			imu.orientation.w = q.w;

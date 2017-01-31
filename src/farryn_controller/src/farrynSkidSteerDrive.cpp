@@ -39,8 +39,8 @@
 #define quad_pulse_per_meter_ 6353.4523937932416
 
 // Max no-load speed = 160 RPM
-//#define meters_per_revolution 0.392699081698724 // 0.1888736903376
-//#define pulses_per_inch 161.37769080234834
+//#define meterdistTraveledper_revolution 0.392699081698724 // 0.1888736903376
+//#define pulsedistTraveledper_inch 161.37769080234834
 
 boost::mutex roboClawLock;
 
@@ -1091,8 +1091,8 @@ void FarrynSkidSteerDrive::openUsb() {
 	lock.l_len = 0;
 	lock.l_pid = getpid();
 	if (fcntl(clawPort, F_SETLK, &lock) != 0) {
-		ROS_ERROR("[FarrynSkidSteerDrive::FarrynSkidSteerDrive] Device is already locked");
-		throw new TRoboClawException("[FarrynSkidSteerDrive::FarrynSkidSteerDrive] Device is already locked");
+		ROS_ERROR("[FarrynSkidSteerDrive::FarrynSkidSteerDrive] Device is alreadeltaY locked");
+		throw new TRoboClawException("[FarrynSkidSteerDrive::FarrynSkidSteerDrive] Device is alreadeltaY locked");
 	}
 
     // Fetch the current port settings.
@@ -1277,7 +1277,6 @@ void FarrynSkidSteerDrive::updateOdometry() {
 	nav_msgs::Odometry odom;
 	double poseEncoderX = 0.0;
 	double poseEncoderY = 0.0;
-	double poseEncoderTheta = 0.0;
 	ros::Rate rate(100);
 	int retry;
 	
@@ -1289,72 +1288,68 @@ void FarrynSkidSteerDrive::updateOdometry() {
 
 		    int32_t m1Encoder = getM1Encoder();
 		    int32_t m2Encoder = getM2Encoder();
-		    double m1DeltaDistance = (m1Encoder - lastM1Encoder) * calibration_correction_factor_ / quad_pulse_per_meter_;
-		    double m2DeltaDistance = (m2Encoder - lastM2Encoder) * calibration_correction_factor_ / quad_pulse_per_meter_;
-		    double theta = (m2DeltaDistance - m1DeltaDistance) / axle_width_;
+		    double distLeft = (m1Encoder - lastM1Encoder) * calibration_correction_factor_ / quad_pulse_per_meter_;
+		    double distRight = (m2Encoder - lastM2Encoder) * calibration_correction_factor_ / quad_pulse_per_meter_;
+		    double deltaTheta = (distRight - distLeft) / axle_width_;
 		    lastM1Encoder = m1Encoder;
 		    lastM2Encoder = m2Encoder;
 		    
-		    double s_ = (m1DeltaDistance + m2DeltaDistance) / 2.0;
-		    double theta_ =  (m2DeltaDistance - m1DeltaDistance) / (2.0 * axle_width_);
+		    double distTraveled = (distLeft + distRight) / 2.0;
 		    
-		    double dx = s_ * cos(/*poseEncoderTheta +*/ theta_);
-		    double dy = s_ * sin(/*poseEncoderTheta +*/ theta_);
-		    poseEncoderX += dx;
-		    poseEncoderY += dy;
-		    poseEncoderTheta += theta;
+		    double deltaX = distTraveled * cos(deltaTheta);
+		    double deltaY = distTraveled * -sin(deltaTheta);
+		    poseEncoderX += (cos(theta) * deltaX - sin(theta) * deltaY);
+		    poseEncoderY += (sin(theta) * deltaX + cos(theta) * deltaY);
+		    theta += deltaTheta;
 		    
-		    double w = theta / dt;
-		    double v = sqrt((dx * dx) + (dy * dy)) / dt;
+		    double vx = distTraveled / dt;
+		    double vth = deltaTheta / dt;
 		    
-		    tf::Quaternion qt;
-		    tf::Vector3 vt;
-		    qt.setRPY(0, 0, poseEncoderTheta);
-		    vt = tf::Vector3(poseEncoderX, poseEncoderY, 0);
-        	ROS_INFO_COND(DEBUG, 
+		    ROS_INFO_COND(DEBUG, 
         	               "    [FarrynSkidSteerDrive::updateOdometry %X] "
         	                  "sequence: %d"
         	                  ", dt: %f"
         	                  ", m1Encoder: %d"
-        	                  ", m1DeltaDistance: %f"
+        	                  ", distLeft: %f"
         	                  ", m2Encoder: %d"
-        	                  ", m2DeltaDistance: %f"
-        	                  ", theta: %f",
+        	                  ", distRight: %f"
+        	                  ", deltaTheta: %f",
         	               gettid(),
         	               sequenceCount++,
         	               dt,
         	               m1Encoder,
-        	               m1DeltaDistance,
+        	               distLeft,
         	               m2Encoder,
-        	               m2DeltaDistance,
-        	               theta);
+        	               distRight,
+        	               deltaTheta);
         	ROS_INFO_COND(DEBUG, 
         	               "    [FarrynSkidSteerDrive::updateOdometry %X] "
-        	                  "dx: %f"
-        	                  ", dy: %f"
-        	                  ", theta: %f"
+        	                  "deltaX: %f"
+        	                  ", deltaY: %f"
+        	                  ", deltaTheta: %f"
         	                  ", poseEncoderX: %f"
         	                  ", poseEncoderY: %f"
-        	                  ", poseEncoderTheta: %f"
-        	                  ", w: %f"
-        	                  ", v: %f",
+        	                  ", deltaTheta: %f"
+        	                  ", theta: %f"
+        	                  ", vx: %f"
+        	                  ", vth: %f",
         	               gettid(),
-        	               dx,
-        	               dy,
-        	               theta,
+        	               deltaX,
+        	               deltaY,
+        	               deltaTheta,
         	               poseEncoderX,
         	               poseEncoderY,
-        	               poseEncoderTheta,
-        	               w,
-        	               v);
+        	               deltaTheta,
+        	               theta,
+        	               vx,
+        	               vth);
 		    
-		    odom.pose.pose.position.x = vt.x();
-		    odom.pose.pose.position.y = vt.y();
-		    odom.pose.pose.position.z = vt.z();
-		    odom.pose.pose.orientation.x = qt.x();
-		    odom.pose.pose.orientation.y = qt.y();
-		    odom.pose.pose.orientation.z = qt.z();
-		    odom.pose.pose.orientation.w = qt.w();
+		    odom.pose.pose.position.x = poseEncoderX;
+		    odom.pose.pose.position.y = poseEncoderY;
+		    odom.pose.pose.orientation.x = 0;
+		    odom.pose.pose.orientation.y = 0;
+		    odom.pose.pose.orientation.z = sin(theta / 2);
+		    odom.pose.pose.orientation.w = cos(theta / 2);
 		    odom.pose.covariance[0] = 0.00001;
 		    odom.pose.covariance[7] = 0.00001;
 		    odom.pose.covariance[14] = 1000000000000.0;
@@ -1365,13 +1360,13 @@ void FarrynSkidSteerDrive::updateOdometry() {
 		    odom.header.frame_id = "odom";
 		    odom.child_frame_id = "base_link";
 		    
-		    odom.twist.twist.angular.z = w;
-		    odom.twist.twist.linear.x = dx / dt;
-		    odom.twist.twist.linear.y = dy / dt;
+		    odom.twist.twist.angular.z = vth;
+		    odom.twist.twist.linear.x = vx;
+		    //odom.twist.twist.linear.y = deltaY / dt;
 
             odometryPublisher.publish(odom);
             
-            geometry_msgs::Quaternion odom_quat = tf::createQuaternionMsgFromYaw(poseEncoderTheta);
+            geometry_msgs::Quaternion odom_quat = tf::createQuaternionMsgFromYaw(theta);
             geometry_msgs::TransformStamped odomTrans;
             odomTrans.header.stamp = currentTime;
             odomTrans.header.frame_id = "odom";

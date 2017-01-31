@@ -98,6 +98,7 @@ private:
 	int32_t lastYPosition;
 	float lastXVelocity;
 	float lastYVelocity;
+	float theta;
 	ros::Time lastTime;
 
 	typedef struct {

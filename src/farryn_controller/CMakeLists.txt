@@ -2,6 +2,7 @@ cmake_minimum_required(VERSION 2.8.3)
 project(farryn_controller)
 
 set( CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -pthread" )
+SET(FLAGS "-g -ggdb -g3")
  
 ## Find catkin macros and libraries
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
@@ -139,11 +140,13 @@ include_directories(
 
 ## Declare a C++ executable
 add_executable(farryn_controller_node src/farrynController.cpp src/farrynSkidSteerDrive.cpp)
+add_executable(square_node src/squareTest.cpp)
 
 ## Add cmake target dependencies of the executable
 ## same as for the library above
 add_dependencies(
   farryn_controller_node
+  square_node
   farryn_controller_generate_messages_cpp
   src/farrynController.cpp 
   src/farrySkidSteerDrive.cpp 
@@ -151,8 +154,14 @@ add_dependencies(
   ${catkin_EXPORTED_TARGETS}
 )
 
+
 ## Specify libraries to link a library or executable target against
 target_link_libraries(farryn_controller_node
+  ${catkin_LIBRARIES} 
+#  ${Boost_LIBRARIES}
+)
+
+target_link_libraries(square_node
   ${catkin_LIBRARIES} 
 #  ${Boost_LIBRARIES}
 )

@@ -1,22 +1,31 @@
 base_link_frame: base_link #fixed frame for robot (this should be differnet for both)
 frequency: 50
+map_frame: map
 odom_frame: odom  # fixed frame for robot (this can be same for both)
 sensor_timeout: 2
 two_d_mode: true
-world_frame: odom #again same is fine
+world_frame: map #again same is fine
 
 odom0: /odom   #odom source for respective robot
 odom0_config: [true, true, false,
-false, false, true,
-true, true, false,
-false, false, true,
-false, false, false]
+              false, false, true,
+              true, true, false,
+              false, false, true,
+              false, false, false]
 odom0_differential: false
 
 imu0: /kaimi_imu/imu #imu source for respective bot
 imu0_config: [false, false, false,
-true, true, true,
-false, false, false,
-false, false, false,
-true, true, true]
+              true, true, true,
+              false, false, false,
+              false, false, false,
+              true, true, true]
 imu0_differential: true
+
+# odom1: /odometry/gps
+# odom1_config: [true, true, false,
+#                false, false, false,
+#                false, false, false,
+#                false, false, false,
+#                false, false, false]
+# odom1_differential: false
