@@ -11,6 +11,7 @@ find_package(catkin REQUIRED COMPONENTS
   dynamic_reconfigure
   geometry_msgs
   message_generation
+  nav_msgs
   rosconsole
   roscpp
   rospy
@@ -141,6 +142,7 @@ include_directories(
 ## Declare a C++ executable
 add_executable(farryn_controller_node src/farrynController.cpp src/farrynSkidSteerDrive.cpp)
 add_executable(square_node src/squareTest.cpp)
+add_executable(trace_rotation_node src/traceRotation.cpp)
 
 ## Add cmake target dependencies of the executable
 ## same as for the library above
@@ -164,6 +166,10 @@ target_link_libraries(farryn_controller_node
 target_link_libraries(square_node
   ${catkin_LIBRARIES} 
 #  ${Boost_LIBRARIES}
+)
+
+target_link_libraries(trace_rotation_node
+  ${catkin_LIBRARIES}
 )
 
 #############

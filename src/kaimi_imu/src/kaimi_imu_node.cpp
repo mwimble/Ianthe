@@ -30,7 +30,7 @@ int main(int argc, char** argv) {
 	nh.getParam("showImu", showImu);
 	ROS_INFO("[kaimi_imu_node] showImu: %s", showImu ? "TRUE" : "false");
 	imuPub = nh.advertise<sensor_msgs::Imu>("imu", 20);
-	ros::Rate rate(50); // Loop rate
+	ros::Rate rate(100); // Loop rate
 
 	MPU6050 mpu;
 
