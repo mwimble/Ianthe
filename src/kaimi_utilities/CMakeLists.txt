@@ -1,21 +1,14 @@
 cmake_minimum_required(VERSION 2.8.3)
-project(strategy)
-
-set(CMAKE_BUILD_TYPE Debug)
-set(CMAKE_CXX_FLAGS "-std=c++0x ${CMAKE_CXX_FLAGS}")
+project(kaimi_utilities)
 
 ## Find catkin macros and libraries
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
 ## is used, also find other catkin packages
 find_package(catkin REQUIRED COMPONENTS
-  dynamic_reconfigure
-  geometry_msgs
   roscpp
   rospy
   std_msgs
 )
-
-find_package(kaimi_utilities)
 
 ## System dependencies are found with CMake's conventions
 # find_package(Boost REQUIRED COMPONENTS system)
@@ -74,7 +67,7 @@ find_package(kaimi_utilities)
 ## Generate added messages and services with any dependencies listed here
 # generate_messages(
 #   DEPENDENCIES
-#   geometry_msgs#   rosserial_msgs#   std_msgs
+#   std_msgs
 # )
 
 ################################################
@@ -107,15 +100,10 @@ find_package(kaimi_utilities)
 ## CATKIN_DEPENDS: catkin_packages dependent projects also need
 ## DEPENDS: system dependencies of this project that dependent projects also need
 catkin_package(
-	INCLUDE_DIRS include
-#  LIBRARIES strategy
-	CATKIN_DEPENDS
-	dynamic_reconfigure
-	geometry_msgs
-	roscpp
-	rospy
-	std_msgs
-	DEPENDS system_lib
+  INCLUDE_DIRS include
+  LIBRARIES kaimi_utilities
+#  CATKIN_DEPENDS roscpp rospy std_msgs
+#  DEPENDS system_lib
 )
 
 ###########
@@ -126,55 +114,31 @@ catkin_package(
 ## Your package locations should be listed before other locations
 include_directories(include)
 include_directories(
-	${catkin_INCLUDE_DIRS}
-	${kaimi_utilities_INCLUDE_DIRS}
+  ${catkin_INCLUDE_DIRS}
+  kaimi_utilities/include
 )
 
 ## Declare a C++ library
-# add_library(strategy
-#   src/${PROJECT_NAME}/strategy.cpp
-# )
+add_library(kaimi_utilities
+   src/GeoPosition.cpp
+ )
 
 ## Add cmake target dependencies of the library
 ## as an example, code may need to be generated before libraries
 ## either from message generation or dynamic reconfigure
-# add_dependencies(strategy ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+# add_dependencies(kaimi_utilities ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 
 ## Declare a C++ executable
-add_executable(strategy_node
-	src/GotoCrossing.cpp
-	src/Rotate.cpp
-	src/SolveMaze.cpp
-	src/StrategyContext.cpp
-	src/StrategyFn.cpp
-	src/strategy_node.cpp
-)
-
-add_executable(travel_gps_route_node
-	src/travel_gps_route_node.cpp
-)
+# add_executable(kaimi_utilities_node src/kaimi_utilities_node.cpp)
 
 ## Add cmake target dependencies of the executable
 ## same as for the library above
-add_dependencies(strategy_node
-	${${PROJECT_NAME}_EXPORTED_TARGETS}
-	${catkin_EXPORTED_TARGETS}
-)
-
-add_dependencies(travel_gps_route_node
-	${${PROJECT_NAME}_EXPORTED_TARGETS}
-	${catkin_EXPORTED_TARGETS}
-)
+# add_dependencies(kaimi_utilities_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 
 ## Specify libraries to link a library or executable target against
-target_link_libraries(strategy_node
-	${catkin_LIBRARIES}
-)
-
-target_link_libraries(travel_gps_route_node
-	${catkin_LIBRARIES}
-	${kaimi_utilities_LIBRARIES}
-)
+# target_link_libraries(kaimi_utilities_node
+#   ${catkin_LIBRARIES}
+# )
 
 #############
 ## Install ##
@@ -191,7 +155,7 @@ target_link_libraries(travel_gps_route_node
 # )
 
 ## Mark executables and/or libraries for installation
-# install(TARGETS strategy strategy_node
+# install(TARGETS kaimi_utilities kaimi_utilities_node
 #   ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
 #   LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
 #   RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
@@ -216,7 +180,7 @@ target_link_libraries(travel_gps_route_node
 #############
 
 ## Add gtest based cpp test target and link libraries
-# catkin_add_gtest(${PROJECT_NAME}-test test/test_strategy.cpp)
+# catkin_add_gtest(${PROJECT_NAME}-test test/test_kaimi_utilities.cpp)
 # if(TARGET ${PROJECT_NAME}-test)
 #   target_link_libraries(${PROJECT_NAME}-test ${PROJECT_NAME})
 # endif()
