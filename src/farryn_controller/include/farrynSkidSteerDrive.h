@@ -87,7 +87,7 @@ private:
 	double min_wheel_vel_;
 
 	//static boost::mutex roboClawLock; // Mutex for access to roboclaw via USB.
-	boost::thread roboClawStatusReaderThread; // Periodically read and publish RoboClaw status.
+	boost::thread roboClawStatusReaderThreadThread; // Periodically read and publish RoboClaw status.
 	boost::thread roboClawMotorControllerThread; // Periodically dequeue and execute motor commands.
 	boost::thread roboClawOdometryThread; // Publish odometry.
 	LockFreeQueue<geometry_msgs::Twist> twistQueue;
@@ -226,9 +226,9 @@ private:
 	
 	void restartUsb();
 
-	void roboClawStatusReader();
+	void roboClawStatusReaderThread();
 
-    void robotMotorController();
+    void robotMotorControllerThread();
     
 	void setM1PID(float p, float i, float d, uint32_t qpps);
 
@@ -236,7 +236,7 @@ private:
 
 	void setVelocities(double v, double w, int32_t* left_qpps, int32_t* right_qpps);
 
-    void updateOdometry();
+    void updateOdometryThread();
     
 	void vwToWheelSpeed(double v, double w, double *left_mps, double *right_mps);
 

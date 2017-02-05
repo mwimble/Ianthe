@@ -17,6 +17,9 @@
         <rosparam command="load" file="$(find farryn_controller)/cfg/farryn_controller.yaml"/>
     </node>
 
+	<node pkg="tf" type="static_transform_publisher" name="base_footprint_base_link_tf" args="0.00 0 0.063 0 0 0 base_footprint base_link 100" />
+
     <include file="$(find kaimi)/launch/dual_ekf_navsat_example.launch">
+
     </include>
 </launch>

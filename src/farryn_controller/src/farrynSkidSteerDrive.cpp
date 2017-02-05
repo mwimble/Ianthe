@@ -123,9 +123,9 @@ FarrynSkidSteerDrive::FarrynSkidSteerDrive() :
 			);
 
 	callbackQueueThread = boost::thread(boost::bind(&FarrynSkidSteerDrive::queueThread, this));
-	roboClawStatusReaderThread = boost::thread(boost::bind(&FarrynSkidSteerDrive::roboClawStatusReader, this));
-	roboClawMotorControllerThread = boost::thread(boost::bind(&FarrynSkidSteerDrive::robotMotorController, this));
-	roboClawOdometryThread = boost::thread(boost::bind(&FarrynSkidSteerDrive::updateOdometry, this));
+	roboClawStatusReaderThreadThread = boost::thread(boost::bind(&FarrynSkidSteerDrive::roboClawStatusReaderThread, this));
+	roboClawMotorControllerThread = boost::thread(boost::bind(&FarrynSkidSteerDrive::robotMotorControllerThread, this));
+	roboClawOdometryThread = boost::thread(boost::bind(&FarrynSkidSteerDrive::updateOdometryThread, this));
 
 	cmdVelSubscriber = rosNode->subscribe(so);
 
@@ -901,8 +901,8 @@ void FarrynSkidSteerDrive::queueThread() {
 	ROS_INFO("[FarrynSkidSteerDrive::queueThread %X] shutdown", gettid());
 }
 
-void FarrynSkidSteerDrive::robotMotorController() {
-    ROS_INFO("[FarrynSkidSteerDrive::robotMotorController %X] startup", gettid());
+void FarrynSkidSteerDrive::robotMotorControllerThread() {
+    ROS_INFO("[FarrynSkidSteerDrive::robotMotorControllerThread %X] startup", gettid());
     while (1) {
 	geometry_msgs::Twist cmd_msg;
 	twistQueue.Consume(cmd_msg);
@@ -917,11 +917,11 @@ void FarrynSkidSteerDrive::robotMotorController() {
         usleep(1000);
     }
     
-    ROS_INFO("[FarrynSkidSteerDrive::robotMotorController %X] shutdown", gettid());
+    ROS_INFO("[FarrynSkidSteerDrive::robotMotorControllerThread %X] shutdown", gettid());
 }
 
-void FarrynSkidSteerDrive::roboClawStatusReader() {
-    ROS_INFO("[FarrynSkidSteerDrive::roboClawStatusReader %X] startup", gettid());
+void FarrynSkidSteerDrive::roboClawStatusReaderThread() {
+    ROS_INFO("[FarrynSkidSteerDrive::roboClawStatusReaderThread %X] startup", gettid());
     uint32_t sequenceCount = 0;
 	ros::Publisher statusPublisher = rosNode->advertise<farryn_controller::RoboClawStatus>("/RoboClawStatus", 1);
 	ros::Rate rate(1);
@@ -929,7 +929,7 @@ void FarrynSkidSteerDrive::roboClawStatusReader() {
 	roboClawStatus.firmwareVersion = getVersion();
 	while (rosNode->ok()) {
 		try {
-		    ROS_INFO_COND(DEBUG, "[FarrynSkidSteerDrive::roboClawStatusReader %X] sequence: %d", gettid(), sequenceCount++);
+		    ROS_INFO_COND(DEBUG, "[FarrynSkidSteerDrive::roboClawStatusReaderThread %X] sequence: %d", gettid(), sequenceCount++);
 			uint8_t errorStatus = getErrorStatus();
 			roboClawStatus.errorStatus = errorStatus;
 			roboClawStatus.stickyErrorStatus |= errorStatus;
@@ -1026,13 +1026,13 @@ void FarrynSkidSteerDrive::roboClawStatusReader() {
 			statusPublisher.publish(roboClawStatus);
 			rate.sleep();
 		} catch (TRoboClawException* e) {
-			ROS_ERROR_COND(DEBUG, "[FarrynSkidSteerDrive::roboClawStatusReader %X] Exception: %s", gettid(), e->what());
+			ROS_ERROR_COND(DEBUG, "[FarrynSkidSteerDrive::roboClawStatusReaderThread %X] Exception: %s", gettid(), e->what());
 		} catch (...) {
-		    ROS_ERROR("[FarrynSkidSteerDrive::roboClawStatusReader %X] Uncaught exception !!!", gettid());
+		    ROS_ERROR("[FarrynSkidSteerDrive::roboClawStatusReaderThread %X] Uncaught exception !!!", gettid());
 		}
 	}
 	
-	ROS_INFO("[FarrynSkidSteerDrive::roboClawStatusReader %X] shutdown", gettid());
+	ROS_INFO("[FarrynSkidSteerDrive::roboClawStatusReaderThread %X] shutdown", gettid());
 }
 
 uint8_t FarrynSkidSteerDrive::readByteWithTimeout() {
@@ -1262,16 +1262,16 @@ void FarrynSkidSteerDrive::stop() {
 	throw new TRoboClawException("[FarrynSkidSteerDrive::stop] RETRY COUNT EXCEEDED");
 }
 
-void FarrynSkidSteerDrive::updateOdometry() {
-    ROS_INFO_COND(DEBUG, "[FarrynSkidSteerDrive::updateOdometry %X] startup", gettid());
+void FarrynSkidSteerDrive::updateOdometryThread() {
+    ROS_INFO_COND(DEBUG, "[FarrynSkidSteerDrive::updateOdometryThread %X] startup", gettid());
 	ros::Publisher odometryPublisher = rosNode->advertise<nav_msgs::Odometry>("odom", 50);
 	tf::TransformBroadcaster odomBroadcaster;
 
-	tf::TransformBroadcaster laserBroadcaster;
-	
 	uint32_t sequenceCount = 0;
     ros::Time currentTime;
-	ros::Time lastTime = ros::Time::now();	
+	ros::Time lastTime = ros::Time::now();
+
+	// TODO: handle encoder overflow. ###
 	int32_t lastM1Encoder = getM1Encoder();
 	int32_t lastM2Encoder = getM2Encoder();
 	nav_msgs::Odometry odom;
@@ -1285,16 +1285,17 @@ void FarrynSkidSteerDrive::updateOdometry() {
 		    ros::spinOnce();
 		    currentTime = ros::Time::now();
 		    double dt = (currentTime - lastTime).toSec();
+  		    lastTime = currentTime;
 
 		    int32_t m1Encoder = getM1Encoder();
 		    int32_t m2Encoder = getM2Encoder();
 		    double distLeft = (m1Encoder - lastM1Encoder) * calibration_correction_factor_ / quad_pulse_per_meter_;
 		    double distRight = (m2Encoder - lastM2Encoder) * calibration_correction_factor_ / quad_pulse_per_meter_;
-		    double deltaTheta = (distRight - distLeft) / axle_width_;
 		    lastM1Encoder = m1Encoder;
 		    lastM2Encoder = m2Encoder;
 		    
 		    double distTraveled = (distLeft + distRight) / 2.0;
+		    double deltaTheta = (distRight - distLeft) / axle_width_;
 		    
 		    double deltaX = distTraveled * cos(deltaTheta);
 		    double deltaY = distTraveled * -sin(deltaTheta);
@@ -1306,7 +1307,7 @@ void FarrynSkidSteerDrive::updateOdometry() {
 		    double vth = deltaTheta / dt;
 		    
 		    ROS_INFO_COND(DEBUG, 
-        	               "    [FarrynSkidSteerDrive::updateOdometry %X] "
+        	               "    [FarrynSkidSteerDrive::updateOdometryThread %X] "
         	                  "sequence: %d"
         	                  ", dt: %f"
         	                  ", m1Encoder: %d"
@@ -1323,7 +1324,7 @@ void FarrynSkidSteerDrive::updateOdometry() {
         	               distRight,
         	               deltaTheta);
         	ROS_INFO_COND(DEBUG, 
-        	               "    [FarrynSkidSteerDrive::updateOdometry %X] "
+        	               "    [FarrynSkidSteerDrive::updateOdometryThread %X] "
         	                  "deltaX: %f"
         	                  ", deltaY: %f"
         	                  ", deltaTheta: %f"
@@ -1344,51 +1345,49 @@ void FarrynSkidSteerDrive::updateOdometry() {
         	               vx,
         	               vth);
 		    
+            geometry_msgs::Quaternion odom_quat = tf::createQuaternionMsgFromYaw(theta);
 		    odom.pose.pose.position.x = poseEncoderX;
 		    odom.pose.pose.position.y = poseEncoderY;
-		    odom.pose.pose.orientation.x = 0;
-		    odom.pose.pose.orientation.y = 0;
-		    odom.pose.pose.orientation.z = sin(theta / 2);
-		    odom.pose.pose.orientation.w = cos(theta / 2);
-		    odom.pose.covariance[0] = 0.00001;
-		    odom.pose.covariance[7] = 0.00001;
-		    odom.pose.covariance[14] = 1000000000000.0;
-		    odom.pose.covariance[21] = 1000000000000.0;
-		    odom.pose.covariance[28] = 1000000000000.0;
-		    odom.pose.covariance[35] = 0.00001;
+		    odom.pose.pose.position.z = 0.0;
+		    odom.pose.pose.orientation = odom_quat;
+		    odom.pose.covariance[0] = 0.0001;
+		    odom.pose.covariance[7] = 0.0001;
+		    odom.pose.covariance[14] = 1000000.0;
+		    odom.pose.covariance[21] = 1000000.0;
+		    odom.pose.covariance[28] = 1000000.0;
+		    odom.pose.covariance[35] = 0.03;
+		    odom.twist.twist.linear.x = vx;
+		    odom.twist.twist.linear.y = 0.0;
+		    odom.twist.twist.angular.z = vth;
+		    // odom.twist.covariance[0] = 0.0001;
+		    // odom.twist.covariance[7] = 0.0001;
+		    // odom.twist.covariance[14] = 0.0001;
+		    // odom.twist.covariance[21] = 1000000.0;
+		    // odom.twist.covariance[28] = 1000000.0;
+		    // odom.twist.covariance[35] = 0.03;
 		    odom.header.stamp = currentTime;
 		    odom.header.frame_id = "odom";
 		    odom.child_frame_id = "base_link";
 		    
-		    odom.twist.twist.angular.z = vth;
-		    odom.twist.twist.linear.x = vx;
 		    //odom.twist.twist.linear.y = deltaY / dt;
 
             odometryPublisher.publish(odom);
             
-            geometry_msgs::Quaternion odom_quat = tf::createQuaternionMsgFromYaw(theta);
             geometry_msgs::TransformStamped odomTrans;
             odomTrans.header.stamp = currentTime;
             odomTrans.header.frame_id = "odom";
-            odomTrans.child_frame_id = "base_link";
+            odomTrans.child_frame_id = "base_footprint";
             odomTrans.transform.translation.x = poseEncoderX;
             odomTrans.transform.translation.y = poseEncoderY;
             odomTrans.transform.translation.z = 0.0;
             odomTrans.transform.rotation = odom_quat;
             odomBroadcaster.sendTransform(odomTrans);
 
-            laserBroadcaster.sendTransform(
-                tf::StampedTransform(
-                    tf::Transform(tf::Quaternion(0, 0, 0, 1), tf::Vector3(0.1, 0.0, 0.1)),
-                    ros::Time::now(),
-                    "base_link", 
-                    "base_laser"));
-  		    lastTime = currentTime;
 		    rate.sleep();
 		} catch (TRoboClawException* e) {
-			ROS_ERROR_COND(DEBUG, "[FarrynSkidSteerDrive::updateOdometry %X] Exception: %s", gettid(), e->what());
+			ROS_ERROR_COND(DEBUG, "[FarrynSkidSteerDrive::updateOdometryThread %X] Exception: %s", gettid(), e->what());
 		} catch (...) {
-		    ROS_ERROR("[FarrynSkidSteerDrive::updateOdometry %X] Uncaught exception !!!", gettid());
+		    ROS_ERROR("[FarrynSkidSteerDrive::updateOdometryThread %X] Uncaught exception !!!", gettid());
 		}
 	}
 }

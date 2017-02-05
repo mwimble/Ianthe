@@ -6,4 +6,5 @@
 	<node pkg="kaimi_imu" name="kaimi_imu" type="kaimi_imu_node" respawn="false" output="screen" launch-prefix="$(arg launch_prefix)" >
 		<param name="showImu" type="bool" value="$(arg showImu)" />
 	</node>
+	<!--node pkg="tf" type="static_transform_publisher" name="imu_to_base_link_tf" args="0.06 0 0.23457225 0 0 0 base_link imu 100" /-->
 </launch>
