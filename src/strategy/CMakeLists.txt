@@ -174,6 +174,7 @@ target_link_libraries(strategy_node
 target_link_libraries(travel_gps_route_node
 	${catkin_LIBRARIES}
 	${kaimi_utilities_LIBRARIES}
+	yaml-cpp
 )
 
 #############
