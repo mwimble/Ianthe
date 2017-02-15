@@ -2,6 +2,16 @@
 	<arg name="doDebug" default="false" />
 	<arg if="$(arg doDebug)" name="launchPrefix" value="xterm -e gdb -args" />
 	<arg unless="$(arg doDebug)" name="launchPrefix" value="" />
+	<arg name="showImu" default="false" />
+
+	<include file="$(find kaimi_imu)/launch/kaimi_imu.launch">
+		<arg name="showImu" value="$(arg showImu)" />
+	</include>
+
+	<node pkg="nmea_navsat_driver" name="gps_node" type="nmea_serial_driver" respawn="true" output="screen" >
+		<param name="port" value="/dev/ttyUSB0" />
+		<param name="baud" value="9600" />
+	</node>
 
 	<node pkg="strategy" name="travel_gps_route_node" type="travel_gps_route_node" respawn="false" output="screen"  launch-prefix="$(arg launchPrefix)">
 	</node>

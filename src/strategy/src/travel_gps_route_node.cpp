@@ -1,20 +1,71 @@
+#include <array>
+#include <boost/format.hpp>
+#include <fstream>
+#include <iostream>
 #include <ros/ros.h>
 #include <ros/console.h>
-#include <array>
+#include <sensor_msgs/Imu.h>
+#include <sensor_msgs/NavSatFix.h>
 #include <stdint.h>
+#include <tf/transform_datatypes.h>
 #include <vector>
 #include "yaml-cpp/yaml.h"
-#include <iostream>
-#include <fstream>
-#include <boost/format.hpp>
 
 #include <kaimi_utilities/GeoPosition.h>
-#include <iostream>
 
 using namespace std;
 
 int debug_last_message = 0; // So that we only emit messages when things change.
+
+sensor_msgs::NavSatFix lastFix;
+sensor_msgs::Imu lastImu;
+
+long lastFixMessageCount = 0;
+long lastImuMessageCount = 0;
+
+string gpsStatus(int8_t status) {
+	switch (status) {
+		case -1: return "NO FIX";
+		case 0: return "FIX";
+		case 1: return "FIX W SAT AUG";
+		case 2: return "FIX W GND AUG";
+		default: return "INVALID VALUE";
+	}
+}
+
+string gpsService(uint16_t service) {
+	string result = "";
+	if (service & 1) result.append(" GPS");
+	if (service & 2) result.append(" GLONASS");
+	if (service & 4) result.append(" COMPASS");
+	if (service & 8) result.append(" GALILEO");
+	return result;
+}
+
+double currentHeadingDegreesAsGps() {
+	tf::Quaternion q;
+	tf::Matrix3x3 m;
+	double imuRoll, imuPitch, imuYaw;
+	q = tf::Quaternion(lastImu.orientation.x, lastImu.orientation.y, lastImu.orientation.z, lastImu.orientation.w);
+	m = tf::Matrix3x3(q);
+	m.getRPY(imuRoll, imuPitch, imuYaw);
+	//ROS_INFO("roll: %7.4f, pitch: %7.4f, yaw: %7.4f", imuRoll, imuPitch, imuYaw);
+	double result = - GeoPosition::degrees(imuYaw) ; // Magnetic declination
+	// if (result < -180) result += 360;
+	// if (result > 180) result -= 360;
+	return result;
+}
 		
+void imuCallback(const sensor_msgs::Imu::ConstPtr& msg) {
+	lastImu = *msg;
+	lastImuMessageCount++;
+}
+
+void navSatFixCallback(const sensor_msgs::NavSatFix::ConstPtr& msg) {
+	lastFix = *msg;
+	lastFixMessageCount++;
+}
+
 void logIfChanged(int id, const char* message) {
 	if (id != debug_last_message) {
 		ROS_INFO_STREAM(message);
@@ -29,30 +80,18 @@ void logIfChanged(int id, const char* message) {
 	GPS_POINT() : latitude(0), longitude(0) {}
 }; // GPS_POINT;
 
-array<GPS_POINT, 5 /*7*/> pointSet = {
-	GPS_POINT(37.35645, -122.0373166)	// NE
-	, GPS_POINT(37.356466, -122.0374)	// NW
-	//, GPS_POINT(37.3564, -122.0374)		// down 25 feet from NW
-	, GPS_POINT(37.35635, -122.0374166)	// down 50 feet from NW
-	, GPS_POINT(37.35635, -122.03735)	// down 50 feet from NE
-	//, GPS_POINT(37.3564, -122.0373333)  // down 25 feet from NE
-	, GPS_POINT(37.35645, -122.0373166)	// NE
-};
-
 int main(int argc, char** argv) {
 	ros::init(argc, argv, "travel_gps_route_node");
 
 	// ROS node handle.
 	ros::NodeHandle nh("~");
 
-	ros::Rate rate(10); // Loop rate
+	ros::Subscriber gpsSub = nh.subscribe("/fix", 1, navSatFixCallback);
+	ros::Subscriber imuSUb = nh.subscribe("/kaimi_imu/imu", 1, imuCallback);
 
-	for (int i = 1; i < 5 /*7*/; i++) {
-		GeoPosition from(pointSet[i - 1].latitude, pointSet[i - 1].longitude);
-		GeoPosition to(pointSet[i].latitude, pointSet[i].longitude);
-		cout << "[" << (i - 1) << "]->[" << i << "] heading: " << to.bearing(from) << ", distance: " << to.distance(from) << " (" << (to.distance(from) * 3.28084) << ")" << endl;
-	}
+	ros::Rate rate(1); // Loop rate
 
+	// Fetch GPS points to move to.
 	YAML::Node gpsConfig = YAML::LoadFile("/home/pi/catkin_ws/src/strategy/config/gps_points.yaml");
 	if (!gpsConfig["gps_points"]) {
 		cout << "Missing gps_points" << endl;
@@ -65,57 +104,32 @@ int main(int argc, char** argv) {
 	}
 
 	GPS_POINT from, to;
-	bool needToSkip = true;
 	int p = 0;
 
-	for (auto const& currentDict : gpsConfig["gps_points"]) {
-		YAML::Node n = currentDict;
+	//for (auto const& currentDict : gpsConfig["gps_points"]) {
+	YAML::const_iterator currentDict = gpsConfig["gps_points"].begin();
+	while (ros::ok()) {
+		rate.sleep();
+		ros::spinOnce();
+
+		YAML::Node n = *currentDict;
 		double lat;
 		double lon;
 		lat = n["latitude"].as<double>();
 		lon = n["longitude"].as<double>();
-		cout << "lat: " << boost::format("%11.6f") % lat << ", lon: " << boost::format("%11.6f") % lon << endl;
-		// for (auto const& element : currentDict) {
-		// 	YAML::Node = element;
-		// 	string key;
-		// 	element->first() >> key;
-		// 	double value;
-		// 	element->second() >> value;
-		// 	cout << "key: " << key << ", value: " << value << endl;
-		// }
+		GeoPosition f(lastFix.latitude, lastFix.longitude);
+		GeoPosition t(lat, lon);
+
+		ROS_INFO("[travel_gps_route_node] moving to point: %d"
+				 ", CURRENT lat: %11.7f, lon: %11.7f, heading: %7.4f"
+				 ", TARGET lat: %11.7f, lon: %11.7f, bearing: %7.4f, distance: %7.4f, GPS: %s-%s",
+				 p,
+				 lastFix.latitude, lastFix.longitude, currentHeadingDegreesAsGps(),
+				 lat, lon, t.bearing(f), t.distance(f),
+				 gpsStatus(lastFix.status.status).c_str(), gpsService(lastFix.status.service).c_str()
+				 );
+		//p++;
 	}
-	// for (YAML::const_iterator it = gpsConfig["gps_pointss"].begin(); it != gpsConfig["gps_pointss"].end(); ++it) {
-	// 	//GPS_POINT to = it->as<GPS_POINT>();
-	// 	GPS_POINT to;
-	// 	//*it >> to;
-	// 	for (YAML::const_iterator mit = it->begin(); mit != it->end(); mit++) {
-			
-	// 		////it->["latitude"] >> to.latitude;
-	// 		// string key;
-	// 		// double value;
-	// 		// mit->first() >> key;
-	// 		// mit->second() >> value;
-	// 		// cout << "key: " << key << ", value: " << value << endl;
-	// 		// if (key == "latitude") {
-	// 		// 	to.latitude = value;
-	// 		// } else {
-	// 		// 	to.longitude = value;
-	// 		// }
-	// 	}
-
-	// 	if (!needToSkip) {
-	// 		GeoPosition f(from.latitude, from.longitude);
-	// 		GeoPosition t(to.latitude, to.longitude);
-	// 		cout << "2 [" << (p - 1) << "]->[" << p << "] heading: " << t.bearing(f) << ", distance: " << t.distance(f) << " (" << (t.distance(f) * 3.28084) << ")" << endl;
-	// 	}
-
-	// 	from = to;
-	// 	p++;
-	// 	needToSkip = false;
-	// 	// GeoPosition from(it->as<vector<int>()[0]gpsPoints[i - 1][.latitude], gpsPoints[i - 1].longitude);
-	// 	// GeoPosition to(gpsPoints[i].latitude, gpsPoints[i].longitude);
-	// 	// cout << "2 [" << (i - 1) << "]->[" << i << "] heading: " << to.bearing(from) << ", distance: " << to.distance(from) << " (" << (to.distance(from) * 3.28084) << ")" << endl;
-	// }
 
 	// while (ros::ok()) {
 	// 	try { // Emplement Sequence behavior
