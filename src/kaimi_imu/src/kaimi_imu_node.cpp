@@ -2,7 +2,7 @@
 #include <ros/console.h>
 #include <sensor_msgs/Imu.h>
 #include <tf/transform_datatypes.h>
-#include "MPU6050_6Axis_MotionApps20.h"
+#include "MPU6050.h"
 
 void setup_covariance(boost::array<double, 9> &cov, double stdev) {
     std::fill(cov.begin(), cov.end(), 0.0);
@@ -60,6 +60,7 @@ int main(int argc, char** argv) {
 
     uint8_t mpuIntStatus = mpu.getIntStatus();
     uint16_t packetSize = mpu.dmpGetFIFOPacketSize();
+    mpu.setSlave2FIFOEnabled(true);//###
     ROS_INFO("[kaimi_imu_node] INT status: %d, packetSize: %d", mpuIntStatus, packetSize);
 
     uint8_t fifoBuffer[64];
@@ -99,9 +100,9 @@ int main(int argc, char** argv) {
 			float ypr[3];
 			mpu.dmpGetGravity(&gravity, &q);
 			mpu.dmpGetYawPitchRoll(ypr, &q, &gravity);
-			// ROS_INFO("ypr  %7.2f %7.2f %7.2f  || w: %f, z: %f, y: %f, x: %f  ", 
-			// 		  ypr[0] * 180/M_PI, ypr[1] * 180/M_PI, ypr[2] * 180/M_PI,
-			// 		  imu.orientation.w, imu.orientation.z, imu.orientation.y, imu.orientation.x);
+//			ROS_INFO("ypr  %7.2f %7.2f %7.2f  || w: %f, z: %f, y: %f, x: %f  ", 
+//					  ypr[0] * 180/M_PI, ypr[1] * 180/M_PI, ypr[2] * 180/M_PI,
+//					  imu.orientation.w, imu.orientation.z, imu.orientation.y, imu.orientation.x);
 
 			mpu.dmpGetAccel(&aa, fifoBuffer);
 			mpu.dmpGetGravity(&gravity, &q);

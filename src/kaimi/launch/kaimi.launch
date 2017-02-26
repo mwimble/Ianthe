@@ -8,9 +8,18 @@
 		<arg name="showImu" value="$(arg showImu)" />
 	</include>
 
-	<node if="$(arg doGps)" pkg="nmea_navsat_driver" name="gps_node" type="nmea_serial_driver" respawn="true" output="screen" >
+	<!--node if="$(arg doGps)" pkg="nmea_navsat_driver" name="gps_node" type="nmea_serial_driver" respawn="true" output="screen" >
 		<param name="port" value="/dev/ttyUSB0" />
 		<param name="baud" value="9600" />
+		<param name="frame_id" value="gps" />
+	</node-->
+
+	<node if="$(arg doGps)" pkg="nmea_navsat_driver" name="nmea_topic_serial_reader_node" type="nmea_topic_serial_reader" respawn="true" output="screen" >
+		<param name="port" value="/dev/ttyUSB0" />
+		<param name="baud" value="9600" />
+	</node>
+
+	<node if="$(arg doGps)" pkg="nmea_navsat_driver" name="nmea_topic_driver_node" type="nmea_topic_driver" respawn="true" output="screen" >
 	</node>
 
     <node if="$(arg doMotor)" pkg="farryn_controller" name="motor_controller_node" type="farryn_controller_node" output="screen">

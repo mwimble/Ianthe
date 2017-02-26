@@ -111,24 +111,27 @@ int main(int argc, char** argv) {
 	while (ros::ok()) {
 		rate.sleep();
 		ros::spinOnce();
+		p = 0;
+		ROS_INFO("---- ----");
+		for (currentDict = gpsConfig["gps_points"].begin(); currentDict != gpsConfig["gps_points"].end(); currentDict++) {
+			YAML::Node n = *currentDict;
+			double lat;
+			double lon;
+			lat = n["latitude"].as<double>();
+			lon = n["longitude"].as<double>();
+			GeoPosition f(lastFix.latitude, lastFix.longitude);
+			GeoPosition t(lat, lon);
 
-		YAML::Node n = *currentDict;
-		double lat;
-		double lon;
-		lat = n["latitude"].as<double>();
-		lon = n["longitude"].as<double>();
-		GeoPosition f(lastFix.latitude, lastFix.longitude);
-		GeoPosition t(lat, lon);
-
-		ROS_INFO("[travel_gps_route_node] moving to point: %d"
-				 ", CURRENT lat: %11.7f, lon: %11.7f, heading: %7.4f"
-				 ", TARGET lat: %11.7f, lon: %11.7f, bearing: %7.4f, distance: %7.4f, GPS: %s-%s",
-				 p,
-				 lastFix.latitude, lastFix.longitude, currentHeadingDegreesAsGps(),
-				 lat, lon, t.bearing(f), t.distance(f),
-				 gpsStatus(lastFix.status.status).c_str(), gpsService(lastFix.status.service).c_str()
-				 );
-		//p++;
+			ROS_INFO("[travel_gps_route_node] point: %d"
+					 ", CURRENT lat: %11.7f, lon: %11.7f, heading: %7.4f"
+					 ", TARGET lat: %11.7f, lon: %11.7f, bearing: %7.4f, distance: %7.4f, GPS: %s-%s",
+					 p,
+					 lastFix.latitude, lastFix.longitude, currentHeadingDegreesAsGps(),
+					 lat, lon, t.bearing(f), t.distance(f),
+					 gpsStatus(lastFix.status.status).c_str(), gpsService(lastFix.status.service).c_str()
+					 );
+			p++;
+		}
 	}
 
 	// while (ros::ok()) {
