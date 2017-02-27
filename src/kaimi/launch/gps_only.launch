@@ -2,8 +2,8 @@
 	<arg name="doGps" default="true" />
 
 	<node if="$(arg doGps)" pkg="nmea_navsat_driver" name="nmea_topic_serial_reader_node" type="nmea_topic_serial_reader" respawn="true" output="screen" >
-		<param name="port" value="/dev/ttyUSB0" />
-		<param name="baud" value="9600" />
+		<param name="port" value="/dev/gps1" />
+		<param name="baud" value="38400" />
 	</node>
 
 	<node if="$(arg doGps)" pkg="nmea_navsat_driver" name="nmea_topic_driver_node" type="nmea_topic_driver" respawn="true" output="screen" >
