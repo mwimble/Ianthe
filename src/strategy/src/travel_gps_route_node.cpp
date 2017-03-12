@@ -62,6 +62,7 @@ void imuCallback(const sensor_msgs::Imu::ConstPtr& msg) {
 }
 
 void navSatFixCallback(const sensor_msgs::NavSatFix::ConstPtr& msg) {
+	ROS_INFO("fix received");
 	lastFix = *msg;
 	lastFixMessageCount++;
 }
@@ -87,7 +88,7 @@ int main(int argc, char** argv) {
 	ros::NodeHandle nh("~");
 
 	ros::Subscriber gpsSub = nh.subscribe("/fix", 1, navSatFixCallback);
-	ros::Subscriber imuSUb = nh.subscribe("/kaimi_imu/imu", 1, imuCallback);
+	ros::Subscriber imuSUb = nh.subscribe("/imu", 1, imuCallback);
 
 	ros::Rate rate(1); // Loop rate
 
@@ -106,17 +107,34 @@ int main(int argc, char** argv) {
 	GPS_POINT from, to;
 	int p = 0;
 
+	ROS_INFO("Waiting for 5 or more GPS readings");
+	while (ros::ok() && (lastFixMessageCount < 5)) {
+		ros::spinOnce();
+	}
+
+	bool needCorrection = true;
+	double correctionLatitude = 0.0;
+	double correctionLongitude = 0.0;
+
 	//for (auto const& currentDict : gpsConfig["gps_points"]) {
 	YAML::const_iterator currentDict = gpsConfig["gps_points"].begin();
 	while (ros::ok()) {
 		rate.sleep();
 		ros::spinOnce();
 		p = 0;
-		ROS_INFO("---- ----");
+		ROS_INFO("---- ---- i: %d, f: %d", lastImuMessageCount, lastFixMessageCount);
 		for (currentDict = gpsConfig["gps_points"].begin(); currentDict != gpsConfig["gps_points"].end(); currentDict++) {
 			YAML::Node n = *currentDict;
 			double lat;
 			double lon;
+			if (needCorrection) {
+				correctionLatitude = lastFix.latitude - n["latitude"].as<double>();
+				correctionLongitude = lastFix.longitude - n["longitude"].as<double>();
+				needCorrection = false;
+				ROS_INFO("Computing correction. CURR lat: %11.7f, lon: %11.7f, P0 lat: %11.7f, lon: %11.7f, CORR lat: %11.7f, lon: %11.7f",
+					lastFix.latitude, lastFix.longitude, n["latitude"].as<double>(), n["longitude"].as<double>(), correctionLatitude, correctionLongitude);
+			}
+
 			lat = n["latitude"].as<double>();
 			lon = n["longitude"].as<double>();
 			GeoPosition f(lastFix.latitude, lastFix.longitude);
@@ -124,12 +142,21 @@ int main(int argc, char** argv) {
 
 			ROS_INFO("[travel_gps_route_node] point: %d"
 					 ", CURRENT lat: %11.7f, lon: %11.7f, heading: %7.4f"
-					 ", TARGET lat: %11.7f, lon: %11.7f, bearing: %7.4f, distance: %7.4f, GPS: %s-%s",
+					 ", TARGET lat: %11.7f, lon: %11.7f, GPS bearing: %7.4f, distance: %7.4f,"
+					 " GPS: %s-%s",
 					 p,
 					 lastFix.latitude, lastFix.longitude, currentHeadingDegreesAsGps(),
 					 lat, lon, t.bearing(f), t.distance(f),
 					 gpsStatus(lastFix.status.status).c_str(), gpsService(lastFix.status.service).c_str()
 					 );
+			GeoPosition fc(lastFix.latitude - correctionLatitude, lastFix.longitude - correctionLongitude);
+			ROS_INFO("[transform_datatypes] point: %d"
+				     ", correction lat: %11.7f, lon: %11.7f"
+					 ", CORRECTED lat: %11.7f, lon: %11.7f, distance: %7.4f",
+					 p,
+					 correctionLatitude, correctionLongitude,
+					 lastFix.latitude - correctionLatitude, lastFix.longitude - correctionLongitude, t.distance(fc)
+				);
 			p++;
 		}
 	}

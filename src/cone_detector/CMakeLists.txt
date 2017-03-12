@@ -1,26 +1,34 @@
 cmake_minimum_required(VERSION 2.8.3)
-project(line_detector)
+project(cone_detector)
 
-set(CMAKE_BUILD_TYPE Debug)
-SET(CMAKE_CXX_FLAGS  "${CMAKE_CXX_FLAGS} -g -std=gnu++0x" )
+set( CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -pthread" )
+SET(FLAGS "-g -ggdb -g3")
+
+## Add support for C++11, supported in ROS Kinetic and newer
+# add_definitions(-std=c++11)
 
 ## Find catkin macros and libraries
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
 ## is used, also find other catkin packages
 find_package(catkin REQUIRED COMPONENTS
-	dynamic_reconfigure
-	message_generation
-#  image_transport
-	roscpp
-	rospy
-	sensor_msgs
-	std_msgs
-)
+#  camera_info_manager
+  cv_bridge
+#  dynamic_reconfigure
+  image_transport
+  message_generation
+  roscpp
+  rospy
+  sensor_msgs
+  std_msgs
+  )
 
-find_package( OpenCV REQUIRED)
+find_package( OpenCV REQUIRED )
+find_package( Boost REQUIRED )
+
+MESSAGE( STATUS "OpenCV: " ${OpenCV_LIBS})
 
 ## System dependencies are found with CMake's conventions
-find_package(Boost 1.54.0 REQUIRED COMPONENTS system)
+# find_package(Boost REQUIRED COMPONENTS system)
 
 
 ## Uncomment this if the package has a setup.py. This macro ensures
@@ -54,8 +62,8 @@ find_package(Boost 1.54.0 REQUIRED COMPONENTS system)
 
 ## Generate messages in the 'msg' folder
 add_message_files(
-	FILES
-	line_detector.msg
+  FILES
+  ObjectDetector.msg
 )
 
 ## Generate services in the 'srv' folder
@@ -74,8 +82,8 @@ add_message_files(
 
 ## Generate added messages and services with any dependencies listed here
 generate_messages(
-	DEPENDENCIES
-	std_msgs
+  DEPENDENCIES
+  std_msgs
 )
 
 ################################################
@@ -108,10 +116,11 @@ generate_messages(
 ## CATKIN_DEPENDS: catkin_packages dependent projects also need
 ## DEPENDS: system dependencies of this project that dependent projects also need
 catkin_package(
-	INCLUDE_DIRS include
-    LIBRARIES line_detector
-	CATKIN_DEPENDS roscpp rospy sensor_msgs std_msgs message_runtime
-#	DEPENDS system_lib
+  INCLUDE_DIRS include
+#  LIBRARIES cone_detector
+#  CATKIN_DEPENDS dynamic_reconfigure image_transport roscpp rospy std_msgs
+  CATKIN_DEPENDS message_runtime
+#  DEPENDS system_lib
 )
 
 ###########
@@ -123,41 +132,53 @@ catkin_package(
 # include_directories(include)
 include_directories(
   ${catkin_INCLUDE_DIRS}
-  include
   ${OpenCV_INCLUDE_DIRS}
+  include
 )
 
 ## Declare a C++ library
-# add_library(line_detector
-#   src/${PROJECT_NAME}/line_detector.cpp
+# add_library(${PROJECT_NAME}
+#   src/${PROJECT_NAME}/cone_detector.cpp
 # )
 
 ## Add cmake target dependencies of the library
 ## as an example, code may need to be generated before libraries
 ## either from message generation or dynamic reconfigure
-# add_dependencies(line_detector ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+# add_dependencies(${PROJECT_NAME} ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 
 ## Declare a C++ executable
-add_executable(
-	line_detector_node 
-	src/line_detector_node.cpp
-	src/MazeDetector.cpp
+## With catkin_make all packages are built within a single CMake context
+## The recommended prefix ensures that target names across packages don't collide
+add_executable(cone_detector_node
+  src/cone_detector_node.cpp
+  src/cone_detector.cpp
 )
+
+add_executable(publish_image_node
+  src/publish_image_node.cpp
+)
+
+## Rename C++ executable without prefix
+## The above recommended prefix causes long target names, the following renames the
+## target back to the shorter version for ease of user use
+## e.g. "rosrun someones_pkg node" instead of "rosrun someones_pkg someones_pkg_node"
+# set_target_properties(${PROJECT_NAME}_node PROPERTIES OUTPUT_NAME node PREFIX "")
 
 ## Add cmake target dependencies of the executable
 ## same as for the library above
-add_dependencies(
-	line_detector_node
-	line_detector_generate_messages_cpp
-	${${PROJECT_NAME}_EXPORTED_TARGETS}
-	${catkin_EXPORTED_TARGETS}
-)
+# add_dependencies(${PROJECT_NAME}_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 
 ## Specify libraries to link a library or executable target against
-target_link_libraries(line_detector_node
-	${catkin_LIBRARIES}
-	${OpenCV_LIBRARIES}
-	${Boost_LIBRARIES}
+target_link_libraries(
+  cone_detector_node
+  ${catkin_LIBRARIES}
+  ${OpenCV_LIBS}
+  ${Boost_LIBRARIES}
+)
+
+target_link_libraries(
+  publish_image_node
+  ${catkin_LIBRARIES}
 )
 
 #############
@@ -175,7 +196,7 @@ target_link_libraries(line_detector_node
 # )
 
 ## Mark executables and/or libraries for installation
-# install(TARGETS line_detector line_detector_node
+# install(TARGETS ${PROJECT_NAME} ${PROJECT_NAME}_node
 #   ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
 #   LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
 #   RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
@@ -200,7 +221,7 @@ target_link_libraries(line_detector_node
 #############
 
 ## Add gtest based cpp test target and link libraries
-# catkin_add_gtest(${PROJECT_NAME}-test test/test_line_detector.cpp)
+# catkin_add_gtest(${PROJECT_NAME}-test test/test_cone_detector.cpp)
 # if(TARGET ${PROJECT_NAME}-test)
 #   target_link_libraries(${PROJECT_NAME}-test ${PROJECT_NAME})
 # endif()

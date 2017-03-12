@@ -107,7 +107,7 @@ find_package(kaimi_utilities)
 ## CATKIN_DEPENDS: catkin_packages dependent projects also need
 ## DEPENDS: system dependencies of this project that dependent projects also need
 catkin_package(
-	INCLUDE_DIRS include
+	INCLUDE_DIRS include ../../devel/include
 #  LIBRARIES strategy
 	CATKIN_DEPENDS
 	dynamic_reconfigure
@@ -115,7 +115,7 @@ catkin_package(
 	roscpp
 	rospy
 	std_msgs
-	DEPENDS system_lib
+#	DEPENDS system_lib
 )
 
 ###########
@@ -128,6 +128,7 @@ include_directories(include)
 include_directories(
 	${catkin_INCLUDE_DIRS}
 	${kaimi_utilities_INCLUDE_DIRS}
+	../../devel/include
 )
 
 ## Declare a C++ library

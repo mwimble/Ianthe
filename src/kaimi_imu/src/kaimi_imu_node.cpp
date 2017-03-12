@@ -97,6 +97,9 @@ int main(int argc, char** argv) {
 			imu.orientation.z = q.z;
 			//ROS_INFO("Quaternion w: %7.2f, x: %7.2f, y: %7.2f, z: %7.2f", q.w, q.x, q.y, q.z);
 
+			int16_t v[9];
+			mpu.getMotion9(&v[0], &v[1], &v[2], &v[3], &v[5], &v[5], &v[6], &v[7], &v[8]);
+			ROS_INFO("[kaimi_imu_node] v0: %d, v1: %d, v2: %d, v3: %d, v4: %d, v5: %d, v6: %d, v7: %d, v8: %d", v[0], v[1], v[2], v[3], v[4], v[5], v[6], v[7], v[8]);
 			float ypr[3];
 			mpu.dmpGetGravity(&gravity, &q);
 			mpu.dmpGetYawPitchRoll(ypr, &q, &gravity);

@@ -1,3 +1,4 @@
+
 cmake_minimum_required(VERSION 2.8.3)
 project(farryn_controller)
 
@@ -114,7 +115,7 @@ catkin_package(
   INCLUDE_DIRS include
 #  LIBRARIES farryn_controller
   CATKIN_DEPENDS dynamic_reconfigure geometry_msgs message_runtime rosconsole roscpp rospy sensor_msgs std_msgs tf
-  DEPENDS system_lib
+#  DEPENDS system_lib
 )
 
 ###########
@@ -149,9 +150,6 @@ add_executable(trace_rotation_node src/traceRotation.cpp)
 add_dependencies(
   farryn_controller_node
   square_node
-  farryn_controller_generate_messages_cpp
-  src/farrynController.cpp 
-  src/farrySkidSteerDrive.cpp 
   ${${PROJECT_NAME}_EXPORTED_TARGETS} 
   ${catkin_EXPORTED_TARGETS}
 )

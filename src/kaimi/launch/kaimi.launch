@@ -4,8 +4,11 @@
 	<arg name="doMotor" default="true" />
 	<arg name="showImu" default="false" />
 
-	<include if="$(arg doImu)" file="$(find kaimi_imu)/launch/kaimi_imu.launch">
+	<!--include if="$(arg doImu)" file="$(find kaimi_imu)/launch/kaimi_imu.launch">
 		<arg name="showImu" value="$(arg showImu)" />
+	</include-->
+
+	<include if="$(arg doImu)" file="$(find razor_imu_9dof)/launch/razor-pub.launch">
 	</include>
 
 	<!--node if="$(arg doGps)" pkg="nmea_navsat_driver" name="gps_node" type="nmea_serial_driver" respawn="true" output="screen" >

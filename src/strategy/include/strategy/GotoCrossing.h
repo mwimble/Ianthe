@@ -4,7 +4,7 @@
 #include <ros/ros.h>
 #include <ros/console.h>
 #include <geometry_msgs/Pose.h>
-#include <line_detector/line_detector.h>
+#include "line_detector/line_detector.h"
 #include <nav_msgs/Odometry.h>
 #include "strategy/StrategyContext.h"
 #include "strategy/StrategyFn.h"
