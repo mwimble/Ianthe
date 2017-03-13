@@ -122,7 +122,7 @@ int main(int argc, char** argv) {
 		rate.sleep();
 		ros::spinOnce();
 		p = 0;
-		ROS_INFO("---- ---- i: %d, f: %d", lastImuMessageCount, lastFixMessageCount);
+		ROS_INFO("---- ---- i: %ld, f: %ld", lastImuMessageCount, lastFixMessageCount);
 		for (currentDict = gpsConfig["gps_points"].begin(); currentDict != gpsConfig["gps_points"].end(); currentDict++) {
 			YAML::Node n = *currentDict;
 			double lat;
