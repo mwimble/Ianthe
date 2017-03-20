@@ -144,7 +144,7 @@ int main(int argc, char **argv) {
 	cmdvelPublisher = rosNode.advertise<geometry_msgs::Twist>("/cmd_vel", 50);
 
 	while (ros::ok() && (imuCount < 5)) {
-		ROS_INFO("[squareTest] waiting on Imu data, imuCount: %d", imuCount);
+		ROS_INFO("[squareTest] waiting on Imu data, imuCount: %ld", imuCount);
 		ros::spinOnce();
 		r->sleep();
 	}
@@ -152,7 +152,7 @@ int main(int argc, char **argv) {
 	lastImu = imu;
 
 	while (ros::ok() && (odomCount < 5)) {
-		ROS_INFO("[squareTest] waiting on Odometry data, odomCount: %d", odomCount);
+		ROS_INFO("[squareTest] waiting on Odometry data, odomCount: %ld", odomCount);
 		ros::spinOnce();
 		r->sleep();
 	}
