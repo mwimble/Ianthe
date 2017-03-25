@@ -1,0 +1,102 @@
+<launch>
+	<arg name="doDebug" default="false" />
+	<arg if="$(arg doDebug)" name="launchPrefix" value="xterm -e gdb -args" />
+	<arg unless="$(arg doDebug)" name="launchPrefix" value="" />
+
+	<arg name="doGps" default="true" doc="Enable the GPS?" />
+	<arg name="doImu" default="true" doc="Enable the IMU node" />
+	<arg name="doMotor" default="true" doc="Enable the motors?" />
+
+	<!-- BEGIN cone_detector parameters -->
+	<arg name="camera_name" default="primesense_camera" doc="Name of camera, to get properties" />
+	<arg name="do_erode_dilate" default="true" doc="true => do erode/dilate step" />
+	<arg name="fps" default="10" doc="Max frames per second to report object detection results" />
+	<arg name="image_topic_name" default="/usb_cam/image_raw" doc="topic name published by camera" />
+	<arg name="image_transport" default="compressed" doc="image transport (e.g., compressed) to be used" />
+	<arg name="resize_x" default="320" doc="Image will be resized to this many columns" />
+	<arg name="resize_y" default="240" doc="Image will be resized to this many rows" />
+	<arg name="show_debug_windows" default="true" doc="true => show debugging X-window panes" />
+	<arg name="show_step_times" default="false" doc="true => show computation times for interesting parts of object recognition" />
+
+	<arg name="low_hue_range" default="0" doc="Low range of hue" />
+	<arg name="high_hue_range" default="44" doc="High range of hue" />
+	<arg name="low_saturation_range" default="98" doc="Low saturation range" />
+	<arg name="high_saturation_range" default="255" doc="High saturantion range" />
+	<arg name="low_value_range" default="169" doc="Low value range" />
+	<arg name="high_value_range" default="255" doc="High value range" />
+	<arg name="low_contour_area" default="500" doc="Minimum contour area in square pixels" />
+	<arg name="high_contour_area" default="180000" doc="Maximum contour area in square pixels" />
+	<!-- END cone_detector parameters -->
+
+	<arg name="cmd_vel_topic_name" default="/cmd_vel" doc="cmd_vel topic name" />
+	<arg name="cone_detector_topic_name" default="/cone_detector" doc="cone_detector topic name" />
+	<arg name="do_debug_strategy" default="true" doc="Enable info traces related to strategy code" />
+	<arg name="fix_topic_name" default="/fix" doc="fix topic name" />
+	<arg name="imu_topic_name" default="/imu" doc="IMU topic name" />
+	<arg name="magnetic_declination" default="13.42" doc="Magnetic declination adjustment for IMU reading" />
+	<arg name="odometry_topic_name" default="/odom" doc="odometry topic name" />
+	<arg name="show_cone_detector_windows" default="true" doc="true => show parameter window for cone detector" />
+	<arg name="use_imu" default="true" doc="true => use the IMU instead of Odometry as true robot heading" />
+	<arg name="waypoint_yaml_path" default="config/wimble_patio_waypoints.yaml" doc="path to yaml file containing waypoints" />
+
+	<node if="$(arg doGps)" pkg="nmea_navsat_driver" name="nmea_topic_serial_reader_node" type="nmea_topic_serial_reader" respawn="true" output="screen" >
+		<param name="port" value="/dev/gps1" />
+		<param name="baud" value="38400" />
+	</node>
+
+	<node if="$(arg doGps)" pkg="nmea_navsat_driver" name="nmea_topic_driver_node" type="nmea_topic_driver" respawn="true" output="screen" >
+	</node>
+
+	<include if="$(arg doImu)" file="$(find razor_imu_9dof)/launch/razor-pub.launch">
+	</include>
+
+	<node f="$(arg doImu)" pkg="tf" type="static_transform_publisher" name="imu_base_link_tf" args="0 0 0 0 0 -1.570796326794897 base_imu_link base_link 100" />
+
+	<node name="usb_cam" pkg="usb_cam" type="usb_cam_node" output="screen" >
+      	<param name="video_device" value="/dev/video0" />
+		<param name="image_width" value="640" />
+		<param name="image_height" value="480" />
+		<param name="pixel_format" value="yuyv" />
+		<param name="camera_frame_id" value="usb_cam" />
+		<param name="io_method" value="mmap"/>
+	</node>
+
+	<node if="$(arg doMotor)" pkg="farryn_controller" name="motor_controller_node" type="farryn_controller_node" output="screen">
+        <rosparam command="load" file="$(find farryn_controller)/cfg/farryn_controller.yaml"/>
+    </node>
+
+	<include file="$(find victoria_navigation)/launch/robo_magellan.launch">
+	  	<arg name="cmd_vel_topic_name" value="$(arg cmd_vel_topic_name)" />
+	  	<arg name="cone_detector_topic_name" value="$(arg cone_detector_topic_name)" />
+	  	<arg name="doDebug" value="$(arg doDebug)" />
+	  	<arg name="do_debug_strategy" value="$(arg do_debug_strategy)" />
+	  	<arg name="fix_topic_name" value="$(arg fix_topic_name)" />
+	  	<arg name="imu_topic_name" value="$(arg imu_topic_name)" />
+	  	<arg name="magnetic_declination" value="$(arg magnetic_declination)" />
+	  	<arg name="odometry_topic_name" value="$(arg odometry_topic_name)" />
+	  	<arg name="use_imu" value="$(arg use_imu)" />
+	  	<arg name="waypoint_yaml_path" value="$(find victoria_navigation)/$(arg waypoint_yaml_path)" />
+
+	  	<!-- BEGIN cone detector parameters -->
+		<arg name="camera_name" value="$(arg camera_name)" />
+		<arg name="do_erode_dilate" value="$(arg do_erode_dilate)" />
+		<arg name="fps" value="$(arg fps)" />
+		<arg name="image_topic_name" value="$(arg image_topic_name)" />
+		<arg name="image_transport" value="$(arg image_transport)" />
+		<arg name="resize_x" value="$(arg resize_x)" />
+		<arg name="resize_y" value="$(arg resize_y)" />
+		<arg name="show_debug_windows" value="$(arg show_cone_detector_windows)" />
+		<arg name="show_step_times" value="$(arg show_step_times)" />
+
+		<arg name="low_hue_range" value="$(arg low_hue_range)" />
+		<arg name="high_hue_range" value="$(arg high_hue_range)" />
+		<arg name="low_saturation_range" value="$(arg low_saturation_range)" />
+		<arg name="high_saturation_range" value="$(arg high_saturation_range)" />
+		<arg name="low_value_range" value="$(arg low_value_range)" />
+		<arg name="high_value_range" value="$(arg high_value_range)" />
+		<arg name="low_contour_area" value="$(arg low_contour_area)" />
+		<arg name="high_contour_area" value="$(arg high_contour_area)" />
+	  	<!-- END cone detector parameters -->
+	</include>
+
+</launch>
