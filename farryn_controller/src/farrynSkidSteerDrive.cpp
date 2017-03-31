@@ -51,18 +51,15 @@ uint32_t gettid() {
 FarrynSkidSteerDrive::FarrynSkidSteerDrive() :
     expectedM1Speed(0),
     expectedM2Speed(0),
-    lastM1Position(0),
-    lastM2Position(0),
-    lastXPosition(0),
-    lastYPosition(0),
-    lastXVelocity(0.0),
-    lastYVelocity(0.0),
     m1MovingForward(true),
     m2MovingForward(true),
     maxM1Distance(0),
     maxM2Distance(0),
     max_wheel_vel_(0.4),
-    min_wheel_vel_(0.0)
+    min_wheel_vel_(0.0),
+    robot_pose_px_(0.0),
+    robot_pose_py_(0.0),
+    theta_(0.0)
     {
     ROS_INFO_COND(DEBUG, "[FarrynSkidSteerDrive::FarrynSkidSteerDrive %X] constructor", gettid());
 	if (!ros::isInitialized()) {
@@ -83,7 +80,7 @@ FarrynSkidSteerDrive::FarrynSkidSteerDrive() :
 	MAX_SECONDS_TRAVEL = 0.5;
 	portAddress = 0x80;
 	MAX_COMMAND_RETRIES = 5;
-	DEBUG = false;
+	DEBUG = true;
 
 	M1_P =  8762.98571;
 	M2_P = 9542.41265;
@@ -208,8 +205,6 @@ void FarrynSkidSteerDrive::drive(float velocity, float angle) {
 	int32_t m1_speed;
 	int32_t m2_speed;
 	setVelocities(velocity, angle, &m1_speed, &m2_speed);
-	lastXVelocity = velocity - (AXLE_WIDTH / 2.0) * angle;
-	lastYVelocity = velocity + (AXLE_WIDTH / 2.0) * angle;
 	int32_t m1_abs_speed = m1_speed >= 0 ? m1_speed : -m1_speed;
 	int32_t m2_abs_speed = m2_speed >= 0 ? m2_speed : -m2_speed;
 	int32_t m1_max_distance = m1_abs_speed * MAX_SECONDS_TRAVEL; // Limit travel.
@@ -237,7 +232,7 @@ void FarrynSkidSteerDrive::drive(float velocity, float angle) {
 				   SetDWORDval(m2_max_distance),
 				   1 /* Cancel any previous command */
 				   );
-	    ROS_INFO_COND(DEBUG, "<----- [FarrynSkidSteerDrive::drive %X] return", gettid());
+	    	//ROS_INFO_COND(DEBUG, "<----- [FarrynSkidSteerDrive::drive %X] return", gettid());
 			return;
 		} catch (TRoboClawException* e) {
 			ROS_ERROR_COND(DEBUG, "[FarrynSkidSteerDrive::drive %X] Exception: %s, retry number %d", gettid(), e->what(), retry);
@@ -252,7 +247,7 @@ void FarrynSkidSteerDrive::drive(float velocity, float angle) {
 
 void FarrynSkidSteerDrive::flush() {
 	int retval = tcflush(clawPort, TCIOFLUSH);
-	ROS_INFO_COND(DEBUG, "[FarrynSkidSteerDrive::flush %X}", gettid());
+	//ROS_INFO_COND(DEBUG, "[FarrynSkidSteerDrive::flush %X}", gettid());
 	if (retval != 0) {
 		ROS_ERROR("[FarrynSkidSteerDrive::flush %X] Unable to flush device", gettid());
 		throw new TRoboClawException("[FarrynSkidSteerDrive::flush] Unable to flush device");
@@ -270,7 +265,7 @@ void updateCrc(uint16_t& crc, uint8_t data) {
 }
 
 unsigned short FarrynSkidSteerDrive::get2ByteCommandResult(uint8_t command) {
-	ROS_INFO_COND(DEBUG, "[FarrynSkidSteerDrive::get2ByteCommandResult %X] command: 0x%X", gettid(), command);
+	//ROS_INFO_COND(DEBUG, "[FarrynSkidSteerDrive::get2ByteCommandResult %X] command: 0x%X", gettid(), command);
 	uint16_t crc = 0;
 	updateCrc(crc, portAddress);
 	updateCrc(crc, command);
@@ -310,7 +305,7 @@ unsigned short FarrynSkidSteerDrive::get2ByteCommandResult(uint8_t command) {
 }
 
 FarrynSkidSteerDrive::EncodeResult FarrynSkidSteerDrive::getEncoderCommandResult(uint8_t command) {
-	ROS_INFO_COND(DEBUG, "[FarrynSkidSteerDrive::getEncoderCommandResult %X] command: 0x%X", gettid(), command);
+	//ROS_INFO_COND(DEBUG, "[FarrynSkidSteerDrive::getEncoderCommandResult %X] command: 0x%X", gettid(), command);
 	uint16_t crc = 0;
 	updateCrc(crc, portAddress);
 	updateCrc(crc, command);
@@ -362,11 +357,11 @@ FarrynSkidSteerDrive::EncodeResult FarrynSkidSteerDrive::getEncoderCommandResult
 		throw new TRoboClawException("[FarrynSkidSteerDrive::::getEncoderCommandResult] RECEIVED -1");
 	}
 
-	ROS_INFO_COND(DEBUG, "[FarrynSkidSteerDrive::::getEncoderCommandResult %X] command: %d, value: %d, status: 0x%x",
-	    gettid(),
-	    command, 
-	    result.value, 
-	    result.status);
+	// ROS_INFO_COND(DEBUG, "[FarrynSkidSteerDrive::::getEncoderCommandResult %X] command: %d, value: %d, status: 0x%x",
+	//     gettid(),
+	//     command, 
+	//     result.value, 
+	//     result.status);
 
 	uint16_t responseCrc = 0;
 	datum = readByteWithTimeout();
@@ -391,7 +386,7 @@ FarrynSkidSteerDrive::EncodeResult FarrynSkidSteerDrive::getEncoderCommandResult
 
 uint16_t FarrynSkidSteerDrive::getErrorStatus() {
 	boost::mutex::scoped_lock lock(roboClawLock);
-	ROS_INFO_COND(DEBUG, "-----> [FarrynSkidSteerDrive::getErrorStatus %X]", gettid());
+	//ROS_INFO_COND(DEBUG, "-----> [FarrynSkidSteerDrive::getErrorStatus %X]", gettid());
 	int retry;
 
 	for (retry = 0; retry < MAX_COMMAND_RETRIES; retry++) {
@@ -417,7 +412,7 @@ uint16_t FarrynSkidSteerDrive::getErrorStatus() {
 					if (datum != -1) {
 						responseCrc |= datum;
 						if (responseCrc == crc) {
-							ROS_INFO_COND(DEBUG, "<----- [FarrynSkidSteerDrive::getErrorStatus %X] return: 0x%X", gettid(), datum);
+							//ROS_INFO_COND(DEBUG, "<----- [FarrynSkidSteerDrive::getErrorStatus %X] return: 0x%X", gettid(), datum);
 							return result;
 						}
 					}
@@ -436,13 +431,13 @@ uint16_t FarrynSkidSteerDrive::getErrorStatus() {
 
 float FarrynSkidSteerDrive::getLogicBatteryLevel() {
 	boost::mutex::scoped_lock lock(roboClawLock);
-	ROS_INFO_COND(DEBUG, "-----> [FarrynSkidSteerDrive::getLogicBatteryLevel %X]", gettid());
+	//ROS_INFO_COND(DEBUG, "-----> [FarrynSkidSteerDrive::getLogicBatteryLevel %X]", gettid());
 	int retry;
 
 	for (retry = 0; retry < MAX_COMMAND_RETRIES; retry++) {
 		try {
 			float result = ((float) get2ByteCommandResult(GETLBATT)) / 10.0;
-			ROS_INFO_COND(DEBUG, "<----- [FarrynSkidSteerDrive::getLogicBatteryLevel %X] return %f", gettid(), result);
+			//ROS_INFO_COND(DEBUG, "<----- [FarrynSkidSteerDrive::getLogicBatteryLevel %X] return %f", gettid(), result);
 			return result;
 		} catch (TRoboClawException* e) {
 			ROS_ERROR("[FarrynSkidSteerDrive::getLogicBatteryLevel %X] Exception: %s, retry number: %d", gettid(), e->what(), retry);
@@ -457,7 +452,7 @@ float FarrynSkidSteerDrive::getLogicBatteryLevel() {
 }
 
 uint32_t FarrynSkidSteerDrive::getLongCont(uint16_t& crc) {
-	ROS_INFO_COND(DEBUG, "[FarrynSkidSteerDrive::getLongCont %X] CRC: 0x%X", gettid(), crc);
+	//ROS_INFO_COND(DEBUG, "[FarrynSkidSteerDrive::getLongCont %X] CRC: 0x%X", gettid(), crc);
 	uint32_t result = 0;
 	uint8_t datum = readByteWithTimeout();
 	result |= datum << 24;
@@ -476,13 +471,13 @@ uint32_t FarrynSkidSteerDrive::getLongCont(uint16_t& crc) {
 
 int32_t FarrynSkidSteerDrive::getM1Encoder() {
 	boost::mutex::scoped_lock lock(roboClawLock);
-	ROS_INFO_COND(DEBUG, "-----> [FarrynSkidSteerDrive::getM1Encoder %X]", gettid());
+	//ROS_INFO_COND(DEBUG, "-----> [FarrynSkidSteerDrive::getM1Encoder %X]", gettid());
 	int retry;
 
 	for (retry = 0; retry < MAX_COMMAND_RETRIES; retry++) {
 		try {
 			EncodeResult result = getEncoderCommandResult(GETM1ENC);
-	    	ROS_INFO_COND(DEBUG, "<----- [FarrynSkidSteerDrive::getM1Encoder %X] return: %d/0x%X", gettid(), result.value, result.status);
+	    	//ROS_INFO_COND(DEBUG, "<----- [FarrynSkidSteerDrive::getM1Encoder %X] return: %d/0x%X", gettid(), result.value, result.status);
 			return result.value;
 		} catch (TRoboClawException* e) {
 			ROS_ERROR_COND(DEBUG, "[FarrynSkidSteerDrive::getM1Encoder %X] Exception: %s, retry number: %d", gettid(), e->what(), retry);
@@ -496,7 +491,7 @@ int32_t FarrynSkidSteerDrive::getM1Encoder() {
 }
 
 int32_t FarrynSkidSteerDrive::getSpeedResult(uint8_t command) {
-	ROS_INFO_COND(DEBUG, "[FarrynSkidSteerDrive::getSpeedResult %X] command: 0x%X", gettid(), command);
+	//ROS_INFO_COND(DEBUG, "[FarrynSkidSteerDrive::getSpeedResult %X] command: 0x%X", gettid(), command);
 	uint16_t crc = 0;
 	updateCrc(crc, portAddress);
 	updateCrc(crc, command);
@@ -547,13 +542,13 @@ int32_t FarrynSkidSteerDrive::getSpeedResult(uint8_t command) {
 
 int32_t FarrynSkidSteerDrive::getM1Speed() {
 	boost::mutex::scoped_lock lock(roboClawLock);
-	ROS_INFO_COND(DEBUG, "-----> [FarrynSkidSteerDrive::getM1Speed %X]", gettid());
+	//ROS_INFO_COND(DEBUG, "-----> [FarrynSkidSteerDrive::getM1Speed %X]", gettid());
 	int retry;
 
 	for (retry = 0; retry < MAX_COMMAND_RETRIES; retry++) {
 		try {
 			uint32_t result = getSpeedResult(GETM1SPEED);
-	    	ROS_INFO_COND(DEBUG, "<----- [FarrynSkidSteerDrive::getM1Speed %X] return: %d", gettid(), result);
+	    	//ROS_INFO_COND(DEBUG, "<----- [FarrynSkidSteerDrive::getM1Speed %X] return: %d", gettid(), result);
 		    if (result < 0) {
 				m1MovingForward = false;
 		    } else {
@@ -574,13 +569,13 @@ int32_t FarrynSkidSteerDrive::getM1Speed() {
 
 int32_t FarrynSkidSteerDrive::getM2Encoder() {
 	boost::mutex::scoped_lock lock(roboClawLock);
-	ROS_INFO_COND(DEBUG, "-----> [FarrynSkidSteerDrive::getM2Encoder %X]", gettid());
+	//ROS_INFO_COND(DEBUG, "-----> [FarrynSkidSteerDrive::getM2Encoder %X]", gettid());
 	int retry;
 
 	for (retry = 0; retry < MAX_COMMAND_RETRIES; retry++) {
 		try {
 			EncodeResult result = getEncoderCommandResult(GETM2ENC);
-	    	ROS_INFO_COND(DEBUG, "<----- [FarrynSkidSteerDrive::getM2Encoder %X] return: %d/0x%X", gettid(), result.value, result.status);
+	    	//ROS_INFO_COND(DEBUG, "<----- [FarrynSkidSteerDrive::getM2Encoder %X] return: %d/0x%X", gettid(), result.value, result.status);
 			return result.value;
 		} catch (TRoboClawException* e) {
 			ROS_ERROR_COND(DEBUG, "[FarrynSkidSteerDrive::getM2Encoder %X] Exception: %s, retry number: %d", gettid(), e->what(), retry);
@@ -595,13 +590,13 @@ int32_t FarrynSkidSteerDrive::getM2Encoder() {
 
 int32_t FarrynSkidSteerDrive::getM2Speed() {
 	boost::mutex::scoped_lock lock(roboClawLock);
-	ROS_INFO_COND(DEBUG, "-----> [FarrynSkidSteerDrive::getM2Speed %X]", gettid());
+	//ROS_INFO_COND(DEBUG, "-----> [FarrynSkidSteerDrive::getM2Speed %X]", gettid());
 	int retry;
 
 	for (retry = 0; retry < MAX_COMMAND_RETRIES; retry++) {
 		try {
 			uint32_t result = getSpeedResult(GETM2SPEED);
-		    ROS_INFO_COND(DEBUG, "<----- [FarrynSkidSteerDrive::getM2Speed %X] return: %d", gettid(), result);
+		    //ROS_INFO_COND(DEBUG, "<----- [FarrynSkidSteerDrive::getM2Speed %X] return: %d", gettid(), result);
 		    if (result < 0) {
 				m2MovingForward = false;
 		    } else {
@@ -622,13 +617,13 @@ int32_t FarrynSkidSteerDrive::getM2Speed() {
 
 float FarrynSkidSteerDrive::getMainBatteryLevel() {
 	boost::mutex::scoped_lock lock(roboClawLock);
-	ROS_INFO_COND(DEBUG, "-----> [FarrynSkidSteerDrive::getMainBatteryLevel %X]", gettid());
+	//ROS_INFO_COND(DEBUG, "-----> [FarrynSkidSteerDrive::getMainBatteryLevel %X]", gettid());
 	int retry;
 
 	for (retry = 0; retry < MAX_COMMAND_RETRIES; retry++) {
 		try {
 			float result = ((float) get2ByteCommandResult(GETMBATT)) / 10.0;
-			ROS_INFO_COND(DEBUG, "<----- [FarrynSkidSteerDrive::getMainBatteryLevel %X] return: %f", gettid(), result);
+			//ROS_INFO_COND(DEBUG, "<----- [FarrynSkidSteerDrive::getMainBatteryLevel %X] return: %f", gettid(), result);
 			return result;
 		} catch (TRoboClawException* e) {
 			ROS_ERROR_COND(DEBUG, "[FarrynSkidSteerDrive::getMainBatteryLevel %X] Exception: %s, retry number: %d", gettid(), e->what(), retry);
@@ -643,7 +638,7 @@ float FarrynSkidSteerDrive::getMainBatteryLevel() {
 
 FarrynSkidSteerDrive::TMotorCurrents FarrynSkidSteerDrive::getMotorCurrents() {
 	boost::mutex::scoped_lock lock(roboClawLock);
-	ROS_INFO_COND(DEBUG, "-----> [FarrynSkidSteerDrive::getMotorCurrents %X]", gettid());
+	//ROS_INFO_COND(DEBUG, "-----> [FarrynSkidSteerDrive::getMotorCurrents %X]", gettid());
 	int retry;
 
 	for (retry = 0; retry < MAX_COMMAND_RETRIES; retry++) {
@@ -652,7 +647,7 @@ FarrynSkidSteerDrive::TMotorCurrents FarrynSkidSteerDrive::getMotorCurrents() {
 			unsigned long currentPair = getUlongCommandResult(GETCURRENTS);
 			result.m1Current = ((int16_t) (currentPair >> 16)) * 0.010;
 			result.m2Current = ((int16_t) (currentPair & 0xFFFF)) * 0.010;
-			ROS_INFO_COND(DEBUG, "<----- [FarrynSkidSteerDrive::getMotorCurrents %X] return: %f/%f", gettid(), result.m1Current, result.m2Current);
+			//ROS_INFO_COND(DEBUG, "<----- [FarrynSkidSteerDrive::getMotorCurrents %X] return: %f/%f", gettid(), result.m1Current, result.m2Current);
 			return result;
 		} catch (TRoboClawException* e) {
 			ROS_ERROR_COND(DEBUG, "[FarrynSkidSteerDrive::getMotorCurrents %X] Exception: %s, retry number: %d", gettid(), e->what(), retry);
@@ -666,7 +661,7 @@ FarrynSkidSteerDrive::TMotorCurrents FarrynSkidSteerDrive::getMotorCurrents() {
 }
 
 unsigned long FarrynSkidSteerDrive::getUlongCommandResult(uint8_t command) {
-	ROS_INFO_COND(DEBUG, "[FarrynSkidSteerDrive::getUlongCommandResult %X] command: 0x%X", gettid(), command);
+	//ROS_INFO_COND(DEBUG, "[FarrynSkidSteerDrive::getUlongCommandResult %X] command: 0x%X", gettid(), command);
 	uint16_t crc = 0;
 	updateCrc(crc, portAddress);
 	updateCrc(crc, command);
@@ -709,7 +704,7 @@ unsigned long FarrynSkidSteerDrive::getUlongCommandResult(uint8_t command) {
 }
 
 FarrynSkidSteerDrive::ULongPair FarrynSkidSteerDrive::getULongPairCommandResult(uint8_t command) {
-	ROS_INFO_COND(DEBUG, "[FarrynSkidSteerDrive::getULongPairCommandResult %X] command: 0x%X", gettid(), command);
+	//ROS_INFO_COND(DEBUG, "[FarrynSkidSteerDrive::getULongPairCommandResult %X] command: 0x%X", gettid(), command);
 	uint16_t crc = 0;
 	updateCrc(crc, portAddress);
 	updateCrc(crc, command);
@@ -741,7 +736,7 @@ FarrynSkidSteerDrive::ULongPair FarrynSkidSteerDrive::getULongPairCommandResult(
 
 FarrynSkidSteerDrive::TPIDQ FarrynSkidSteerDrive::getM1PIDQ() {
 	boost::mutex::scoped_lock lock(roboClawLock);
-	ROS_INFO_COND(DEBUG, "-----> [FarrynSkidSteerDrive::getM1PIDQ %X]", gettid());
+	//ROS_INFO_COND(DEBUG, "-----> [FarrynSkidSteerDrive::getM1PIDQ %X]", gettid());
 	int retry;
 
 	for (retry = 0; retry < MAX_COMMAND_RETRIES; retry++) {
@@ -765,12 +760,12 @@ FarrynSkidSteerDrive::TPIDQ FarrynSkidSteerDrive::getM1PIDQ() {
 				if (datum != -1) {
 					responseCrc |= datum;
 					if (responseCrc == crc) {
-						ROS_INFO_COND(DEBUG, "<----- [FarrynSkidSteerDrive::getM1PIDQ %X] return: %d, %d, %d, %d",
-						      gettid(),
-						      result.p,
-						      result.i,
-						      result.d,
-						      result.q);
+						// ROS_INFO_COND(DEBUG, "<----- [FarrynSkidSteerDrive::getM1PIDQ %X] return: %d, %d, %d, %d",
+						//       gettid(),
+						//       result.p,
+						//       result.i,
+						//       result.d,
+						//       result.q);
 						return result;
 					}
 				}
@@ -788,7 +783,7 @@ FarrynSkidSteerDrive::TPIDQ FarrynSkidSteerDrive::getM1PIDQ() {
 
 FarrynSkidSteerDrive::TPIDQ FarrynSkidSteerDrive::getM2PIDQ() {
 	boost::mutex::scoped_lock lock(roboClawLock);
-	ROS_INFO_COND(DEBUG, "-----> [FarrynSkidSteerDrive::getM2PIDQ %X]", gettid());
+	//ROS_INFO_COND(DEBUG, "-----> [FarrynSkidSteerDrive::getM2PIDQ %X]", gettid());
 	int retry;
 
 	for (retry = 0; retry < MAX_COMMAND_RETRIES; retry++) {
@@ -812,12 +807,12 @@ FarrynSkidSteerDrive::TPIDQ FarrynSkidSteerDrive::getM2PIDQ() {
 				if (datum != -1) {
 					responseCrc |= datum;
 					if (responseCrc == crc) {
-						ROS_INFO_COND(DEBUG, "<----- [FarrynSkidSteerDrive::getM2PIDQ %X] return: %d, %d, %d, %d",
-						      gettid(),
-						      result.p,
-						      result.i,
-						      result.d,
-						      result.q);
+						// ROS_INFO_COND(DEBUG, "<----- [FarrynSkidSteerDrive::getM2PIDQ %X] return: %d, %d, %d, %d",
+						//       gettid(),
+						//       result.p,
+						//       result.i,
+						//       result.d,
+						//       result.q);
 						return result;
 					}
 				}
@@ -835,7 +830,7 @@ FarrynSkidSteerDrive::TPIDQ FarrynSkidSteerDrive::getM2PIDQ() {
 
 string FarrynSkidSteerDrive::getVersion() {
 	boost::mutex::scoped_lock lock(roboClawLock);
-	ROS_INFO_COND(DEBUG, "-----> [FarrynSkidSteerDrive::getVersion %X]", gettid());
+	//ROS_INFO_COND(DEBUG, "-----> [FarrynSkidSteerDrive::getVersion %X]", gettid());
 	int retry;
 
 	for (retry = 0; retry < MAX_COMMAND_RETRIES; retry++) {
@@ -864,9 +859,9 @@ string FarrynSkidSteerDrive::getVersion() {
 								if (datum != -1) {
 									responseCrc |= datum;
 									if (responseCrc == crc) {
-										ROS_INFO_COND(DEBUG, "<----- [FarrynSkidSteerDrive::getVersion %X] return: %s",
-										      gettid(),
-										      version.str().c_str());
+										// ROS_INFO_COND(DEBUG, "<----- [FarrynSkidSteerDrive::getVersion %X] return: %s",
+										//       gettid(),
+										//       version.str().c_str());
 										return version.str();
 									}
 								}
@@ -929,7 +924,7 @@ void FarrynSkidSteerDrive::roboClawStatusReaderThread() {
 	roboClawStatus.firmwareVersion = getVersion();
 	while (rosNode->ok()) {
 		try {
-		    ROS_INFO_COND(DEBUG, "[FarrynSkidSteerDrive::roboClawStatusReaderThread %X] sequence: %d", gettid(), sequenceCount++);
+		    //ROS_INFO_COND(DEBUG, "[FarrynSkidSteerDrive::roboClawStatusReaderThread %X] sequence: %d", gettid(), sequenceCount++);
 			uint8_t errorStatus = getErrorStatus();
 			roboClawStatus.errorStatus = errorStatus;
 			roboClawStatus.stickyErrorStatus |= errorStatus;
@@ -998,7 +993,6 @@ void FarrynSkidSteerDrive::roboClawStatusReaderThread() {
                 EncodeResult encoder = getEncoderCommandResult(GETM1ENC);
                 roboClawStatus.encoderM1value = encoder.value;
                 roboClawStatus.encoderM1Status = encoder.status;
-                lastM1Position = encoder.value;
             }
 
             {
@@ -1006,7 +1000,6 @@ void FarrynSkidSteerDrive::roboClawStatusReaderThread() {
                 EncodeResult encoder = getEncoderCommandResult(GETM2ENC);
                 roboClawStatus.encoderM2value = encoder.value;
                 roboClawStatus.encoderM2Status = encoder.status;
-                lastM2Position = encoder.value;
             }
 			
 			roboClawStatus.expectedM1Speed = expectedM1Speed;
@@ -1036,7 +1029,7 @@ void FarrynSkidSteerDrive::roboClawStatusReaderThread() {
 }
 
 uint8_t FarrynSkidSteerDrive::readByteWithTimeout() {
-	ROS_INFO_COND(DEBUG, "[FarrynSkidSteerDrive::readByteWithTimeout %X]", gettid());
+	//ROS_INFO_COND(DEBUG, "[FarrynSkidSteerDrive::readByteWithTimeout %X]", gettid());
 
 	struct pollfd ufd[1];
 	ufd[0].fd = clawPort;
@@ -1063,7 +1056,7 @@ uint8_t FarrynSkidSteerDrive::readByteWithTimeout() {
 			throw TRoboClawException("[FarrynSkidSteerDrive::readByteWithTimeout] Failed to read 1 byte");
 		}
 
-		ROS_INFO_COND(DEBUG, "[FarrynSkidSteerDrive::readByteWithTimeout %X] ...result: 0x%X", gettid(), int(buffer[0]));
+		//ROS_INFO_COND(DEBUG, "[FarrynSkidSteerDrive::readByteWithTimeout %X] ...result: 0x%X", gettid(), int(buffer[0]));
 		return buffer[0];
 	} else {
 		ROS_ERROR("[FarrynSkidSteerDrive::readByteWithTimeout] %X Unhandled case", gettid());
@@ -1134,7 +1127,7 @@ void FarrynSkidSteerDrive::restartUsb() {
 
 void FarrynSkidSteerDrive::setM1PID(float p, float i, float d, uint32_t qpps) {
 	boost::mutex::scoped_lock lock(roboClawLock);
-	ROS_INFO_COND(DEBUG, "[FarrynSkidSteerDrive::setM1PID %X] p: %f, i: %f, d: %f, qpps: %d", gettid(), p, i, d, qpps);
+	//ROS_INFO_COND(DEBUG, "[FarrynSkidSteerDrive::setM1PID %X] p: %f, i: %f, d: %f, qpps: %d", gettid(), p, i, d, qpps);
 	int retry;
 
 	for (retry = 0; retry < MAX_COMMAND_RETRIES; retry++) {
@@ -1147,7 +1140,7 @@ void FarrynSkidSteerDrive::setM1PID(float p, float i, float d, uint32_t qpps) {
 				   SetDWORDval(kp),
 				   SetDWORDval(ki),
 				   SetDWORDval(qpps));
-        	ROS_INFO_COND(DEBUG, "<----- [FarrynSkidSteerDrive::setM1PID %X]", gettid());
+        	//ROS_INFO_COND(DEBUG, "<----- [FarrynSkidSteerDrive::setM1PID %X]", gettid());
 			return;
 		} catch (TRoboClawException* e) {
 			ROS_ERROR_COND(DEBUG, "[FarrynSkidSteerDrive::setM1PID %X] Exception: %s, retry number: %d", gettid(), e->what(), retry);
@@ -1162,7 +1155,7 @@ void FarrynSkidSteerDrive::setM1PID(float p, float i, float d, uint32_t qpps) {
 
 void FarrynSkidSteerDrive::setM2PID(float p, float i, float d, uint32_t qpps) {
 	boost::mutex::scoped_lock lock(roboClawLock);
-	ROS_INFO_COND(DEBUG, "[FarrynSkidSteerDrive::setM2PID %X] p: %f, i: %f, d: %f, qpps: %d", gettid(), p, i, d, qpps);
+	//ROS_INFO_COND(DEBUG, "[FarrynSkidSteerDrive::setM2PID %X] p: %f, i: %f, d: %f, qpps: %d", gettid(), p, i, d, qpps);
 	int retry;
 
 	for (retry = 0; retry < MAX_COMMAND_RETRIES; retry++) {
@@ -1175,7 +1168,7 @@ void FarrynSkidSteerDrive::setM2PID(float p, float i, float d, uint32_t qpps) {
 				   SetDWORDval(kp),
 				   SetDWORDval(ki),
 				   SetDWORDval(qpps));
-        	ROS_INFO_COND(DEBUG, "<----- [FarrynSkidSteerDrive::setM2PID %X]", gettid());
+        	//ROS_INFO_COND(DEBUG, "<----- [FarrynSkidSteerDrive::setM2PID %X]", gettid());
 			return;
 		} catch (TRoboClawException* e) {
 			ROS_ERROR_COND(DEBUG, "[FarrynSkidSteerDrive::setM2PID %X] Exception: %s, retry number: %d", gettid(), e->what(), retry);
@@ -1190,12 +1183,12 @@ void FarrynSkidSteerDrive::setM2PID(float p, float i, float d, uint32_t qpps) {
 
 // Command motors to a given linear and angular velocity
 void FarrynSkidSteerDrive::setVelocities(double v, double w, int32_t* left_qpps, int32_t* right_qpps) {
-    ROS_INFO_COND(DEBUG, "[FarrynSkidSteerDrive::setVelocities %X], v: %f, w: %f, left_qpps: %ld, right_qpps: %ld",
-              gettid(),
-              v,
-              w,
-              (long int) left_qpps,
-              (long int) right_qpps);
+    // ROS_INFO_COND(DEBUG, "[FarrynSkidSteerDrive::setVelocities %X], v: %f, w: %f, left_qpps: %ld, right_qpps: %ld",
+    //           gettid(),
+    //           v,
+    //           w,
+    //           (long int) left_qpps,
+    //           (long int) right_qpps);
 	double wmag = fabs(w);
 	double vmag = fabs(v);
 
@@ -1238,13 +1231,11 @@ void FarrynSkidSteerDrive::stop() {
 
 	for (retry = 0; retry < MAX_COMMAND_RETRIES; retry++) {
 		try {
-		    lastXVelocity = 0.0;
-		    lastYVelocity = 0.0;
 			writeN(true, 10, portAddress, MIXEDSPEED,
 				SetDWORDval(0),
 				SetDWORDval(0)
 				);
-            ROS_INFO_COND(DEBUG, "<----- [FarrynSkidSteerDrive::stop %X]", gettid());
+            //ROS_INFO_COND(DEBUG, "<----- [FarrynSkidSteerDrive::stop %X]", gettid());
             expectedM1Speed = 0;
             expectedM2Speed = 0;
             maxM1Distance = 0;
@@ -1275,8 +1266,6 @@ void FarrynSkidSteerDrive::updateOdometryThread() {
 	int32_t lastM1Encoder = getM1Encoder();
 	int32_t lastM2Encoder = getM2Encoder();
 	nav_msgs::Odometry odom;
-	double poseEncoderX = 0.0;
-	double poseEncoderY = 0.0;
 	ros::Rate rate(100);
 	int retry;
 	
@@ -1289,65 +1278,82 @@ void FarrynSkidSteerDrive::updateOdometryThread() {
 
 		    int32_t m1Encoder = getM1Encoder();
 		    int32_t m2Encoder = getM2Encoder();
-		    double distLeft = (m1Encoder - lastM1Encoder) * calibration_correction_factor_ / quad_pulse_per_meter_;
-		    double distRight = (m2Encoder - lastM2Encoder) * calibration_correction_factor_ / quad_pulse_per_meter_;
+		    double delta_distance_left_meters = (m1Encoder - lastM1Encoder) * calibration_correction_factor_ / quad_pulse_per_meter_;
+		    double delta_distance_right_meters = (m2Encoder - lastM2Encoder) * calibration_correction_factor_ / quad_pulse_per_meter_;
 		    lastM1Encoder = m1Encoder;
 		    lastM2Encoder = m2Encoder;
-		    
-		    double distTraveled = (distLeft + distRight) / 2.0;
-		    double deltaTheta = (distRight - distLeft) / axle_width_;
-		    
-		    double deltaX = distTraveled * cos(deltaTheta);
-		    double deltaY = distTraveled * -sin(deltaTheta);
-		    poseEncoderX += (cos(theta) * deltaX - sin(theta) * deltaY);
-		    poseEncoderY += (sin(theta) * deltaX + cos(theta) * deltaY);
-		    theta += deltaTheta;
-		    
-		    double vx = distTraveled / dt;
-		    double vth = deltaTheta / dt;
+
+		    double left_meters_per_sec = delta_distance_left_meters / dt;
+		    double right_meters_per_sec = delta_distance_right_meters / dt;
+		    double linear_speed_meters_per_sec = (left_meters_per_sec + right_meters_per_sec) / 2.0;
+		    double center_dist_traveled_meters = linear_speed_meters_per_sec * dt;
+		    double omega_r = (right_meters_per_sec - left_meters_per_sec) / 2.0;
+		    double d_theta = (delta_distance_right_meters - delta_distance_left_meters) / axle_width_;
+		    double r;
+		    double robot_pose_vx_ = linear_speed_meters_per_sec * cos(theta_);
+		    double robot_pose_vy_ = linear_speed_meters_per_sec * sin(theta_);
+		    robot_pose_px_ += robot_pose_vx_ * dt;
+		    robot_pose_py_ += robot_pose_vy_ * dt;
+		 //    if (delta_distance_left_meters == delta_distance_right_meters) {
+		 //    	d_theta = 0.0;
+			//     robot_pose_px_ += center_dist_traveled_meters * cos(theta_);
+			//     robot_pose_py_ += center_dist_traveled_meters * sin(theta_);
+		 //    } else {
+		 //    	r = center_dist_traveled_meters / d_theta;
+			//     robot_pose_px_ += r * (sin(d_theta + theta_) - sin(theta_));
+			//     robot_pose_py_ += r * (cos(d_theta + theta_) - cos(theta_));
+			// }
+
+		    theta_ += normalizeRadians(d_theta);
+
+		    // Compute position;
+		    // robot_pose_px_ += robot_pose_vx_ * dt;
+		    // robot_pose_py_ += robot_pose_vy_ * dt;
+
+		    double vth = d_theta / dt;
 		    
 		    ROS_INFO_COND(DEBUG, 
-        	               "    [FarrynSkidSteerDrive::updateOdometryThread %X] "
-        	                  "sequence: %d"
-        	                  ", dt: %f"
+        	               "[FarrynSkidSteerDrive::updateOdometryThread] "
+        	               	  " lin m/s: %7.4f"
+        	               	  ", ctr d: %7.4f"
+        	                  ", d_theta: %7.4f"
+        	                  ", r: %7.4f"
+        	                  ", x: %7.4f"
+        	                  ", y: %7.4f"
+        	                  ", d_theta: %7.4f"
+        	                  ", theta: %7.4f"
+        	                  ", sequence: %d"
+        	                  ", dt: %5.3f"
         	                  ", m1Encoder: %d"
-        	                  ", distLeft: %f"
+        	                  ", delta_distance_left_meters: %7.4f"
         	                  ", m2Encoder: %d"
-        	                  ", distRight: %f"
-        	                  ", deltaTheta: %f",
-        	               gettid(),
+        	                  ", delta_distance_right_meters: %7.4f",
+        	               linear_speed_meters_per_sec,
+        	               center_dist_traveled_meters,
+        	               d_theta,
+        	               r,
+        	               robot_pose_px_,
+        	               robot_pose_py_,
+        	               d_theta,
+        	               theta_,
         	               sequenceCount++,
         	               dt,
         	               m1Encoder,
-        	               distLeft,
+        	               delta_distance_left_meters,
         	               m2Encoder,
-        	               distRight,
-        	               deltaTheta);
+        	               delta_distance_right_meters);
         	ROS_INFO_COND(DEBUG, 
-        	               "    [FarrynSkidSteerDrive::updateOdometryThread %X] "
-        	                  "deltaX: %f"
-        	                  ", deltaY: %f"
-        	                  ", deltaTheta: %f"
-        	                  ", poseEncoderX: %f"
-        	                  ", poseEncoderY: %f"
-        	                  ", deltaTheta: %f"
-        	                  ", theta: %f"
-        	                  ", vx: %f"
-        	                  ", vth: %f",
-        	               gettid(),
-        	               deltaX,
-        	               deltaY,
-        	               deltaTheta,
-        	               poseEncoderX,
-        	               poseEncoderY,
-        	               deltaTheta,
-        	               theta,
-        	               vx,
+        	               "[FarrynSkidSteerDrive::updateOdometryThread] "
+        	                  "robot_pose_vx_: %7.4f"
+        	                  ", robot_pose_vy_: %7.4f"
+        	                  ", vth: %7.4f",
+        	               robot_pose_vx_,
+        	               robot_pose_vy_,
         	               vth);
 		    
-            geometry_msgs::Quaternion odom_quat = tf::createQuaternionMsgFromYaw(theta);
-		    odom.pose.pose.position.x = poseEncoderX;
-		    odom.pose.pose.position.y = poseEncoderY;
+            geometry_msgs::Quaternion odom_quat = tf::createQuaternionMsgFromYaw(theta_);
+		    odom.pose.pose.position.x = robot_pose_px_;
+		    odom.pose.pose.position.y = robot_pose_py_;
 		    odom.pose.pose.position.z = 0.0;
 		    odom.pose.pose.orientation = odom_quat;
 		    odom.pose.covariance[0] = 0.0001;
@@ -1356,8 +1362,9 @@ void FarrynSkidSteerDrive::updateOdometryThread() {
 		    odom.pose.covariance[21] = 1000000.0;
 		    odom.pose.covariance[28] = 1000000.0;
 		    odom.pose.covariance[35] = 0.03;
-		    odom.twist.twist.linear.x = vx;
-		    odom.twist.twist.linear.y = 0.0;
+		    odom.twist.twist.linear.x = robot_pose_vx_;
+		    odom.twist.twist.linear.y = robot_pose_vy_;
+		    odom.twist.twist.linear.z = 0.0;
 		    odom.twist.twist.angular.z = vth;
 		    // odom.twist.covariance[0] = 0.0001;
 		    // odom.twist.covariance[7] = 0.0001;
@@ -1377,8 +1384,8 @@ void FarrynSkidSteerDrive::updateOdometryThread() {
             odomTrans.header.stamp = currentTime;
             odomTrans.header.frame_id = "odom";
             odomTrans.child_frame_id = "base_footprint";
-            odomTrans.transform.translation.x = poseEncoderX;
-            odomTrans.transform.translation.y = poseEncoderY;
+            odomTrans.transform.translation.x = robot_pose_px_;
+            odomTrans.transform.translation.y = robot_pose_py_;
             odomTrans.transform.translation.z = 0.0;
             odomTrans.transform.rotation = odom_quat;
             odomBroadcaster.sendTransform(odomTrans);
@@ -1425,7 +1432,7 @@ void FarrynSkidSteerDrive::vwToWheelSpeed(double v, double w, double *left_mps, 
 }
 
 void FarrynSkidSteerDrive::writeByte(uint8_t byte) {
-	ROS_INFO_COND(DEBUG, "[FarrynSkidSteerDrive::writeByte %X] byte: 0x%X", gettid(), byte);
+	//ROS_INFO_COND(DEBUG, "[FarrynSkidSteerDrive::writeByte %X] byte: 0x%X", gettid(), byte);
 	ssize_t result = write(clawPort, &byte, 1);
 	if (result != 1) {
 	  ROS_ERROR("[FarrynSkidSteerDrive::writeByte %X] Unable to write one byte, result: %d, errno: %d)", gettid(), (int) result,  errno);

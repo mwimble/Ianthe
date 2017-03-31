@@ -41,6 +41,7 @@
 	<arg name="odometry_topic_name" default="/odom" doc="odometry topic name" />
 	<arg name="show_cone_detector_windows" default="true" doc="true => show parameter window for cone detector" />
 	<arg name="show_imu" default="false" doc="true => show IMU angle to output" />
+	<arg name="solve_using_odom" default="true" doc="true => compute distance using Odometry, not GPS" />
 	<arg name="use_imu" default="true" doc="true => use the IMU instead of Odometry as true robot heading" />
 	<arg name="waypoint_yaml_path" default="config/wimble_patio_waypoints.yaml" doc="path to yaml file containing waypoints" />
 
@@ -104,6 +105,7 @@
 	  	<arg name="imu_topic_name" value="$(arg imu_topic_name)" />
 	  	<arg name="magnetic_declination" value="$(arg magnetic_declination)" />
 	  	<arg name="odometry_topic_name" value="$(arg odometry_topic_name)" />
+	  	<arg name="solve_using_odom" value="$(arg solve_using_odom)" />
 	  	<arg name="use_imu" value="$(arg use_imu)" />
 	  	<arg name="waypoint_yaml_path" value="$(find victoria_navigation)/$(arg waypoint_yaml_path)" />
 	</include>

@@ -92,13 +92,12 @@ private:
 	boost::thread roboClawOdometryThread; // Publish odometry.
 	LockFreeQueue<geometry_msgs::Twist> twistQueue;
 	
-	int32_t lastM1Position;
-	int32_t lastM2Position;
-	int32_t lastXPosition;
-	int32_t lastYPosition;
-	float lastXVelocity;
-	float lastYVelocity;
-	float theta;
+	double robot_pose_vx_;
+	double robot_pose_vy_;
+	double robot_pose_px_;
+	double robot_pose_py_;
+
+	float theta_;
 	ros::Time lastTime;
 
 	typedef struct {
@@ -217,6 +216,12 @@ private:
 	unsigned long getUlongCommandResult(uint8_t command);
 
 	ULongPair getULongPairCommandResult(uint8_t command);
+
+	double normalizeRadians(double angle) {
+		while (angle > M_PI) { angle -= 2.0 * M_PI; }
+		while (angle < -M_PI) { angle += 2.0 * M_PI; }
+		return angle;
+	}
 	
 	void  openUsb();
 
