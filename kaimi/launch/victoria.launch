@@ -35,29 +35,30 @@
 	<arg name="do_debug_strategy" default="true" doc="Enable info traces related to strategy code" />
 	<arg name="fix_topic_name" default="/fix" doc="fix topic name" />
 	<arg name="gps_close_distance_meters" default="2.0" doc="How close to get to a point using GPS to be considered 'close enough'" />
-	<arg name="imu_topic_name" default="/kaimi_imu/imu" doc="IMU topic name" />
+	<arg name="imu_topic_name" default="/imu" doc="IMU topic name" />
 	<!--arg name="magnetic_declination" default="13.42" doc="Magnetic declination adjustment for IMU reading" /-->
 	<arg name="magnetic_declination" default="0.0" doc="Magnetic declination adjustment for IMU reading" />
 	<arg name="odometry_topic_name" default="/odom" doc="odometry topic name" />
 	<arg name="show_cone_detector_windows" default="true" doc="true => show parameter window for cone detector" />
 	<arg name="show_imu" default="false" doc="true => show IMU angle to output" />
-	<arg name="solve_using_odom" default="true" doc="true => compute distance using Odometry, not GPS" />
+	<arg name="solve_using_odom" default="false" doc="true => compute distance using Odometry, not GPS" />
 	<arg name="use_imu" default="true" doc="true => use the IMU instead of Odometry as true robot heading" />
 	<arg name="waypoint_yaml_path" default="config/wimble_patio_waypoints.yaml" doc="path to yaml file containing waypoints" />
 
-	<node if="$(arg doGps)" pkg="nmea_navsat_driver" name="nmea_topic_serial_reader_node" type="nmea_topic_serial_reader" respawn="true" output="screen" >
-		<param name="port" value="/dev/gps1" />
-		<param name="baud" value="38400" />
-	</node>
+	<!--node if="$(arg doGps)" pkg="nmea_navsat_driver" name="nmea_topic_serial_reader_node" type="nmea_topic_serial_reader" respawn="true" output="screen" >
+		<param name="port" value="/dev/ttyUSB0" />
+	</node-->
 
-	<node if="$(arg doGps)" pkg="nmea_navsat_driver" name="nmea_topic_driver_node" type="nmea_topic_driver" respawn="true" output="screen" >
-	</node>
+	<!--node if="$(arg doGps)" pkg="nmea_navsat_driver" name="nmea_topic_driver_node" type="nmea_topic_driver" respawn="true" output="screen" >
+	</node-->
+	<node if="$(arg doGps)" pkg="gpsd_client" name="gpsd_client" type="gpsd_client" respawn="true" output="screen" />
 
 	<!--include if="$(arg doImu)" file="$(find razor_imu_9dof)/launch/razor-pub.launch">
 	</include-->
-	<include if="$(arg doImu)" file="$(find kaimi_imu)/launch/kaimi_imu.launch">
+	<!--include if="$(arg doImu)" file="$(find kaimi_imu)/launch/kaimi_imu.launch">
 		<arg name="showImu" value="$(arg show_imu)" />
-	</include>
+	</include-->
+	<include if="$(arg doImu)" file="$(find rtimulib_ros)/launch/rtimulib_ros.launch" />
 
 	<node if="$(arg doImu)" pkg="tf" type="static_transform_publisher" name="imu_base_link_tf"  respawn="true" args="0 0 0 0 0 -1.570796326794897 imu base_link 100" />
 

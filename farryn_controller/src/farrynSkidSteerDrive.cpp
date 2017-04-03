@@ -61,6 +61,7 @@ FarrynSkidSteerDrive::FarrynSkidSteerDrive() :
     robot_pose_py_(0.0),
     theta_(0.0)
     {
+	DEBUG = false;
     ROS_INFO_COND(DEBUG, "[FarrynSkidSteerDrive::FarrynSkidSteerDrive %X] constructor", gettid());
 	if (!ros::isInitialized()) {
 		ROS_FATAL_STREAM("[FarrynSkidSteerDrive::FarrynSkidSteerDrive] A ROS Node for FarrynSkidSteerDrive has not been initialized.");
@@ -80,7 +81,6 @@ FarrynSkidSteerDrive::FarrynSkidSteerDrive() :
 	MAX_SECONDS_TRAVEL = 0.5;
 	portAddress = 0x80;
 	MAX_COMMAND_RETRIES = 5;
-	DEBUG = true;
 
 	M1_P =  8762.98571;
 	M2_P = 9542.41265;
