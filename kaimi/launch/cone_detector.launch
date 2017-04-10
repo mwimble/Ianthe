@@ -4,46 +4,28 @@
 	<arg unless="$(arg doDebug)" name="launchPrefix" value="" />
 
 	<arg name="doConeDetector" default="true" doc="Enable the cone detector" />
-	<arg name="doGps" default="true" doc="Enable the GPS?" />
-	<arg name="doImu" default="true" doc="Enable the IMU node" />
-	<arg name="doMotor" default="true" doc="Enable the motors?" />
-	<arg name="doStrategy" default="true" doc="Enable the strategy module" />
 
 	<!-- BEGIN cone_detector parameters -->
 	<arg name="camera_name" default="primesense_camera" doc="Name of camera, to get properties" />
-	<arg name="do_erode_dilate" default="true" doc="true => do erode/dilate step" />
 	<arg name="fps" default="10" doc="Max frames per second to report object detection results" />
 	<arg name="image_topic_name" default="/usb_cam/image_raw" doc="topic name published by camera" />
 	<arg name="image_transport" default="compressed" doc="image transport (e.g., compressed) to be used" />
+	<arg name="max_aspect_ratio" default="0.85" doc="Max top_length / bottom_length acceptable for cone shape" />
+	<arg name="poly_epsilon" default="6.7" doc="Epsilong value for approxPolyDP" />
 	<arg name="resize_x" default="320" doc="Image will be resized to this many columns" />
 	<arg name="resize_y" default="240" doc="Image will be resized to this many rows" />
-	<arg name="show_debug_windows" default="true" doc="true => show debugging X-window panes" />
 	<arg name="show_step_times" default="false" doc="true => show computation times for interesting parts of object recognition" />
 
-	<arg name="low_hue_range" default="0" doc="Low range of hue" />
-	<arg name="high_hue_range" default="24" doc="High range of hue" />
-	<arg name="low_saturation_range" default="158" doc="Low saturation range" />
+	<arg name="low_hue_range" default="3" doc="Low range of hue" />
+	<arg name="high_hue_range" default="34" doc="High range of hue" />
+	<arg name="low_saturation_range" default="165" doc="Low saturation range" />
 	<arg name="high_saturation_range" default="255" doc="High saturantion range" />
-	<arg name="low_value_range" default="169" doc="Low value range" />
+	<arg name="low_value_range" default="90" doc="Low value range" />
 	<arg name="high_value_range" default="255" doc="High value range" />
-	<arg name="low_contour_area" default="500" doc="Minimum contour area in square pixels" />
+	<arg name="low_contour_area" default="80" doc="Minimum contour area in square pixels" />
 	<arg name="high_contour_area" default="180000" doc="Maximum contour area in square pixels" />
 	<!-- END cone_detector parameters -->
 
-	<arg name="cmd_vel_topic_name" default="/cmd_vel" doc="cmd_vel topic name" />
-	<arg name="cone_detector_topic_name" default="/cone_detector" doc="cone_detector topic name" />
-	<arg name="do_debug_strategy" default="true" doc="Enable info traces related to strategy code" />
-	<arg name="fix_topic_name" default="/fix" doc="fix topic name" />
-	<arg name="gps_close_distance_meters" default="2.0" doc="How close to get to a point using GPS to be considered 'close enough'" />
-	<arg name="imu_topic_name" default="/imu" doc="IMU topic name" />
-	<!--arg name="magnetic_declination" default="13.42" doc="Magnetic declination adjustment for IMU reading" /-->
-	<arg name="magnetic_declination" default="0.0" doc="Magnetic declination adjustment for IMU reading" />
-	<arg name="odometry_topic_name" default="/odom" doc="odometry topic name" />
-	<arg name="show_cone_detector_windows" default="true" doc="true => show parameter window for cone detector" />
-	<arg name="show_imu" default="false" doc="true => show IMU angle to output" />
-	<arg name="solve_using_odom" default="false" doc="true => compute distance using Odometry, not GPS" />
-	<arg name="use_imu" default="true" doc="true => use the IMU instead of Odometry as true robot heading" />
-	<arg name="waypoint_yaml_path" default="config/wimble_patio_waypoints.yaml" doc="path to yaml file containing waypoints" />
 
 	<node name="usb_cam" pkg="usb_cam" type="usb_cam_node" output="screen" >
       	<param name="video_device" value="/dev/video0" />
@@ -56,13 +38,13 @@
 
 	<include if="$(arg doConeDetector)" file="$(find victoria_perception)/launch/cone_detector.launch">
 		<arg name="camera_name" value="$(arg camera_name)" />
-		<arg name="do_erode_dilate" value="$(arg do_erode_dilate)" />
 		<arg name="fps" value="$(arg fps)" />
 		<arg name="image_topic_name" value="$(arg image_topic_name)" />
 		<arg name="image_transport" value="$(arg image_transport)" />
+		<arg name="max_aspect_ratio" value="$(arg max_aspect_ratio)" />
+		<arg name="poly_epsilon" value="$(arg poly_epsilon)" />
 		<arg name="resize_x" value="$(arg resize_x)" />
 		<arg name="resize_y" value="$(arg resize_y)" />
-		<arg name="show_debug_windows" value="$(arg show_cone_detector_windows)" />
 		<arg name="show_step_times" value="$(arg show_step_times)" />
 
 		<arg name="low_hue_range" value="$(arg low_hue_range)" />

@@ -18,6 +18,9 @@
 #include "farryn_controller/FarrynConfig.h"
 #include "farryn_controller/RoboClawStatus.h"
 
+#include <boost/asio.hpp>
+#include <boost/thread.hpp>
+
 using namespace std;
 
 class FarrynSkidSteerDrive {
@@ -77,6 +80,11 @@ public:
 	void stop();
 
 private:
+	// boost::asio::io_service io_;
+	// boost::asio::serial_port port_;
+	// boost::thread runner_;
+	// boost::asio::streambuf buffer_;
+
 	double	updateRate_;
 	double	updatePeriod_;
 

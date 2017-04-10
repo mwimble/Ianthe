@@ -1,6 +1,11 @@
 <launch>
-	<node name="farryn_controller_node" pkg="farryn_controller"  type="farryn_controller_node" output="screen">
+	<arg name="doDebug" default="false" />
+	<arg if="$(arg doDebug)" name="launchPrefix" value="xterm -e gdb -args" />
+	<arg unless="$(arg doDebug)" name="launchPrefix" value="" />
+	<node name="farryn_controller_node" pkg="farryn_controller"  type="farryn_controller_node" output="screen" launch-prefix="$(arg launchPrefix) ">
 		<rosparam command="load" file="$(find farryn_controller)/cfg/farryn_controller.yaml"/>
 	</node>
+	
 	<node pkg="tf" type="static_transform_publisher" name="base_footprint_base_link_tf" args="0.00 0 0.063 0 0 0 base_footprint base_link 100" />
+
 </launch>
