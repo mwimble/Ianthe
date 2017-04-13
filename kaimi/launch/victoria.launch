@@ -1,7 +1,5 @@
 <launch>
 	<arg name="doDebug" default="false" />
-	<arg if="$(arg doDebug)" name="launchPrefix" value="xterm -e gdb -args" />
-	<arg unless="$(arg doDebug)" name="launchPrefix" value="" />
 
 	<arg name="doConeDetector" default="true" doc="Enable the cone detector" />
 	<arg name="doGps" default="true" doc="Enable the GPS?" />
@@ -9,24 +7,35 @@
 	<arg name="doMotor" default="true" doc="Enable the motors?" />
 	<arg name="doStrategy" default="true" doc="Enable the strategy module" />
 
+	<arg name="debug_cone_detector" default="false" doc="true => show interesting debug data" />
+
 	<!-- BEGIN cone_detector parameters -->
+	<arg name="image_topic_name" default="/usb_cam/image_raw" doc="topic name published by camera" />
+	<arg name="low_contour_area" default="80" doc="Minimum contour area in square pixels" />
+
+	<arg name="alow_hue_range" default="0" doc="Low range of hue of first filter" />
+	<arg name="ahigh_hue_range" default="41" doc="High range of hue of first filter" />
+	<arg name="alow_saturation_range" default="140" doc="Low saturation range of first filter" />
+	<arg name="ahigh_saturation_range" default="255" doc="High saturantion range of first filter" />
+	<arg name="alow_value_range" default="178" doc="Low value range of first filter" />
+	<arg name="ahigh_value_range" default="255" doc="High value range of first filter" />
+
+	<arg name="blow_hue_range" default="85" doc="Low range of hue of second filter" />
+	<arg name="bhigh_hue_range" default="179" doc="High range of hue of second filter" />
+	<arg name="blow_saturation_range" default="140" doc="Low saturation range of second filter" />
+	<arg name="bhigh_saturation_range" default="255" doc="High saturantion range of second filter" />
+	<arg name="blow_value_range" default="178" doc="Low value range of second filter" />
+	<arg name="bhigh_value_range" default="255" doc="High value range of second filter" />
+
 	<!--arg name="camera_name" default="primesense_camera" doc="Name of camera, to get properties" />
 	<arg name="fps" default="10" doc="Max frames per second to report object detection results" />
-	<arg name="image_topic_name" default="/usb_cam/image_raw" doc="topic name published by camera" />
 	<arg name="image_transport" default="compressed" doc="image transport (e.g., compressed) to be used" />
 	<arg name="max_aspect_ratio" default="0.85" doc="Max top_length / bottom_length acceptable for cone shape" />
-	<arg name="poly_epsilon" default="6.7" doc="Epsilong value for approxPolyDP" />
+	<arg name="poly_epsilon" default="8.0" doc="Epsilong value for approxPolyDP" />
 	<arg name="resize_x" default="320" doc="Image will be resized to this many columns" />
 	<arg name="resize_y" default="240" doc="Image will be resized to this many rows" />
 	<arg name="show_step_times" default="false" doc="true => show computation times for interesting parts of object recognition" />
 
-	<arg name="low_hue_range" default="0" doc="Low range of hue" />
-	<arg name="high_hue_range" default="20" doc="High range of hue" />
-	<arg name="low_saturation_range" default="70" doc="Low saturation range" />
-	<arg name="high_saturation_range" default="255" doc="High saturantion range" />
-	<arg name="low_value_range" default="90" doc="Low value range" />
-	<arg name="high_value_range" default="255" doc="High value range" />
-	<arg name="low_contour_area" default="80" doc="Minimum contour area in square pixels" />
 	<arg name="high_contour_area" default="180000" doc="Maximum contour area in square pixels" /-->
 	<!-- END cone_detector parameters -->
 
@@ -59,6 +68,7 @@
 		<param name="pixel_format" value="yuyv" />
 		<param name="camera_frame_id" value="usb_cam" />
 		<param name="io_method" value="mmap"/>
+		<param name="framerate" value="10" />
 	</node>
 
 	<node if="$(arg doMotor)" pkg="farryn_controller" name="motor_controller_node" type="farryn_controller_node" respawn="true" output="screen">
@@ -66,9 +76,25 @@
     </node>
 
 	<include if="$(arg doConeDetector)" file="$(find victoria_perception)/launch/cone_detector.launch">
+	  	<arg name="debug_cone_detector" value="$(arg debug_cone_detector)" />
+		<arg name="image_topic_name" value="$(arg image_topic_name)" />
+
+		<arg name="alow_hue_range" value="$(arg alow_hue_range)" />
+		<arg name="ahigh_hue_range" value="$(arg ahigh_hue_range)" />
+		<arg name="alow_saturation_range" value="$(arg alow_saturation_range)" />
+		<arg name="ahigh_saturation_range" value="$(arg ahigh_saturation_range)" />
+		<arg name="alow_value_range" value="$(arg alow_value_range)" />
+		<arg name="ahigh_value_range" value="$(arg ahigh_value_range)" />
+
+		<arg name="blow_hue_range" value="$(arg blow_hue_range)" />
+		<arg name="bhigh_hue_range" value="$(arg bhigh_hue_range)" />
+		<arg name="blow_saturation_range" value="$(arg blow_saturation_range)" />
+		<arg name="bhigh_saturation_range" value="$(arg bhigh_saturation_range)" />
+		<arg name="blow_value_range" value="$(arg blow_value_range)" />
+		<arg name="bhigh_value_range" value="$(arg bhigh_value_range)" />
+
 		<!--arg name="camera_name" value="$(arg camera_name)" />
 		<arg name="fps" value="$(arg fps)" />
-		<arg name="image_topic_name" value="$(arg image_topic_name)" />
 		<arg name="image_transport" value="$(arg image_transport)" />
 		<arg name="max_aspect_ratio" value="$(arg max_aspect_ratio)" />
 		<arg name="poly_epsilon" value="$(arg poly_epsilon)" />
@@ -76,21 +102,15 @@
 		<arg name="resize_y" value="$(arg resize_y)" />
 		<arg name="show_step_times" value="$(arg show_step_times)" />
 
-		<arg name="low_hue_range" value="$(arg low_hue_range)" />
-		<arg name="high_hue_range" value="$(arg high_hue_range)" />
-		<arg name="low_saturation_range" value="$(arg low_saturation_range)" />
-		<arg name="high_saturation_range" value="$(arg high_saturation_range)" />
-		<arg name="low_value_range" value="$(arg low_value_range)" />
-		<arg name="high_value_range" value="$(arg high_value_range)" />
 		<arg name="low_contour_area" value="$(arg low_contour_area)" />
 		<arg name="high_contour_area" value="$(arg high_contour_area)" /-->
 	</include>
 
 	<include if="$(arg doStrategy)" file="$(find victoria_navigation)/launch/robo_magellan.launch">
+	  	<arg name="doDebug" value="$(arg doDebug)" />
 		<!--
 	  	<arg name="cmd_vel_topic_name" value="$(arg cmd_vel_topic_name)" />
 	  	<arg name="cone_detector_topic_name" value="$(arg cone_detector_topic_name)" />
-	  	<arg name="doDebug" value="$(arg doDebug)" />
 	  	<arg name="do_debug_strategy" value="$(arg do_debug_strategy)" />
 	  	<arg name="fix_topic_name" value="$(arg fix_topic_name)" />
 	  	<arg name="gps_close_distance_meters" value="$(arg gps_close_distance_meters)" />

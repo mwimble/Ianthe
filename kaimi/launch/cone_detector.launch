@@ -16,14 +16,19 @@
 	<arg name="resize_y" default="240" doc="Image will be resized to this many rows" />
 	<arg name="show_step_times" default="false" doc="true => show computation times for interesting parts of object recognition" />
 
-	<arg name="low_hue_range" default="3" doc="Low range of hue" />
-	<arg name="high_hue_range" default="34" doc="High range of hue" />
-	<arg name="low_saturation_range" default="165" doc="Low saturation range" />
-	<arg name="high_saturation_range" default="255" doc="High saturantion range" />
-	<arg name="low_value_range" default="90" doc="Low value range" />
-	<arg name="high_value_range" default="255" doc="High value range" />
-	<arg name="low_contour_area" default="80" doc="Minimum contour area in square pixels" />
-	<arg name="high_contour_area" default="180000" doc="Maximum contour area in square pixels" />
+	<arg name="alow_hue_range" default="0" doc="Low range of hue of first filter" />
+	<arg name="ahigh_hue_range" default="179" doc="High range of hue of first filter" />
+	<arg name="alow_saturation_range" default="140" doc="Low saturation range of first filter" />
+	<arg name="ahigh_saturation_range" default="255" doc="High saturantion range of first filter" />
+	<arg name="alow_value_range" default="178" doc="Low value range of first filter" />
+	<arg name="ahigh_value_range" default="255" doc="High value range of first filter" />
+
+	<arg name="blow_hue_range" default="0" doc="Low range of hue of second filter" />
+	<arg name="bhigh_hue_range" default="179" doc="High range of hue of second filter" />
+	<arg name="blow_saturation_range" default="140" doc="Low saturation range of second filter" />
+	<arg name="bhigh_saturation_range" default="255" doc="High saturantion range of second filter" />
+	<arg name="blow_value_range" default="178" doc="Low value range of second filter" />
+	<arg name="bhigh_value_range" default="255" doc="High value range of second filter" />
 	<!-- END cone_detector parameters -->
 
 
