@@ -26,10 +26,10 @@ int main(int argc, char **argv) {
 				(old_m1_enc != farrynSkidSteerDrive->getM1Encoder()) ||
 				(old_m2_enc != farrynSkidSteerDrive->getM2Encoder())
 				) {
-				ROS_INFO("[farryn_controller] m1 enc: %d, m2 enc: %d, batt: %f", 
-						 farrynSkidSteerDrive->getM1Encoder(),
-						 farrynSkidSteerDrive->getM2Encoder(),
-						 farrynSkidSteerDrive->getLogicBatteryLevel());
+				// ROS_INFO("[farryn_controller] m1 enc: %d, m2 enc: %d, batt: %f", 
+				// 		 farrynSkidSteerDrive->getM1Encoder(),
+				// 		 farrynSkidSteerDrive->getM2Encoder(),
+				// 		 farrynSkidSteerDrive->getLogicBatteryLevel());
 				old_batt = farrynSkidSteerDrive->getLogicBatteryLevel();
 				old_m1_enc = farrynSkidSteerDrive->getM1Encoder();
 				old_m2_enc = farrynSkidSteerDrive->getM2Encoder();
