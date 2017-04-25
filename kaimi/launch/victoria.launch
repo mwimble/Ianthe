@@ -20,38 +20,41 @@
 	<arg name="resize_y" default="240" doc="Image will be resized to this many rows" />
 	<arg name="show_step_times" default="false" doc="true =&gt; show computation times for interesting parts of object recognition" />
 
-	<arg name="alow_hue_range" default="0" doc="Low range of hue of first filter" />
-	<arg name="ahigh_hue_range" default="26" doc="High range of hue of first filter" />
-	<arg name="alow_saturation_range" default="107" doc="Low saturation range of first filter" />
+	<arg name="alow_hue_range" default="2" doc="Low range of hue of first filter" />
+	<arg name="ahigh_hue_range" default="27" doc="High range of hue of first filter" />
+	<arg name="alow_saturation_range" default="112" doc="Low saturation range of first filter" />
 	<arg name="ahigh_saturation_range" default="255" doc="High saturantion range of first filter" />
 	<arg name="alow_value_range" default="72" doc="Low value range of first filter" />
 	<arg name="ahigh_value_range" default="255" doc="High value range of first filter" />
 
 	<arg name="blow_hue_range" default="0" doc="Low range of hue of second filter" />
-	<arg name="bhigh_hue_range" default="179" doc="High range of hue of second filter" />
-	<arg name="blow_saturation_range" default="0" doc="Low saturation range of second filter" />
+	<arg name="bhigh_hue_range" default="0" doc="High range of hue of second filter" />
+	<arg name="blow_saturation_range" default="255" doc="Low saturation range of second filter" />
 	<arg name="bhigh_saturation_range" default="255" doc="High saturantion range of second filter" />
 	<arg name="blow_value_range" default="226" doc="Low value range of second filter" />
 	<arg name="bhigh_value_range" default="255" doc="High value range of second filter" />
 
-	<arg name="low_contour_area" default="150" doc="Minimum contour area in square pixels" />
+	<arg name="low_contour_area" default="200" doc="Minimum contour area in square pixels" />
 	<arg name="high_contour_area" default="76800" doc="Maximum contour area in square pixels" />
 
 	<!-- START victoria_navigation parameters -->
-	<arg name="cone_area_for_bumper_hit" default="18000" doc="If equate_size_to_bumper_hit, then a cone area &gt;= this is considered a bumper_hit" />
+	<arg name="cone_area_for_bumper_hit" default="12000" doc="If equate_size_to_bumper_hit, then a cone area &gt;= this is considered a bumper_hit" />
 	<arg name="equate_size_to_bumper_hit" default="true" doc="True =&gt; cone size &gt;= xxx is equivalent to a bumper hit" />
+	<arg name="field_of_view_degrees" default="68.5" doc="Horizontal field of view for camera" />
+	<arg name="gps_close_distance_meters" default="2.0" doc="How close to get to a point using GPS to be considered 'close enough'" />
+	<arg name="ignore_cone_until_within_meters" default="4.0" doc="Ignore the cone detector until within this distance of the goal point" />
+	<arg name="linear_move_meters_per_sec" default="0.5" doc="Rate to move forward in meters/second" />
 	<arg name="solve_using_odom" default="false" doc="true => compute distance using Odometry, not GPS" />
 	<arg name="use_imu" default="true" doc="true => use the IMU instead of Odometry as true robot heading" />
+	<arg name="waypoint_yaml_path" default="$(find victoria_navigation)/config/wimble_patio_waypoints.yaml" doc="path to yaml file containing waypoints" />
 	<!--arg name="cmd_vel_topic_name" default="/cmd_vel" doc="cmd_vel topic name" />
 	<arg name="cone_detector_topic_name" default="/cone_detector" doc="cone_detector topic name" />
 	<arg name="do_debug_strategy" default="true" doc="Enable info traces related to strategy code" />
 	<arg name="fix_topic_name" default="/fix" doc="fix topic name" />
-	<arg name="gps_close_distance_meters" default="4.0" doc="How close to get to a point using GPS to be considered 'close enough'" />
 	<arg name="imu_topic_name" default="/imu" doc="IMU topic name" />
 	<arg name="linear_move_meters_per_sec" default="0.3" doc="Rate to move forward in meters/second" />
 	<arg name="magnetic_declination" default="13.42" doc="Magnetic declination adjustment for IMU reading" />
 	<arg name="odometry_topic_name" default="/odom" doc="odometry topic name" />
-	<arg name="waypoint_yaml_path" default="$(find victoria_navigation)/config/wimble_patio_waypoints.yaml" doc="path to yaml file containing waypoints" />
 	<arg name="yaw_turn_radians_per_sec" default="0.4" doc="Rate to make yaw moves in radians per second" /-->
 	<!-- END victoria_navigation parameters -->
 
@@ -68,7 +71,7 @@
 		<param name="pixel_format" value="yuyv" />
 		<param name="camera_frame_id" value="usb_cam" />
 		<param name="io_method" value="mmap"/>
-		<param name="framerate" value="10" />
+		<param name="framerate" value="30" />
 	</node>
 
 	<node if="$(arg doMotor)" pkg="farryn_controller" name="motor_controller_node" type="farryn_controller_node" respawn="true" output="screen">
@@ -94,6 +97,8 @@
 		<arg name="blow_value_range" value="$(arg blow_value_range)" />
 		<arg name="bhigh_value_range" value="$(arg bhigh_value_range)" />
 
+		<arg name="low_contour_area" value="$(arg low_contour_area)" />
+		<arg name="high_contour_area" value="$(arg high_contour_area)" />
 		<!--arg name="camera_name" value="$(arg camera_name)" />
 		<arg name="fps" value="$(arg fps)" />
 		<arg name="image_transport" value="$(arg image_transport)" />
@@ -102,28 +107,33 @@
 		<arg name="resize_x" value="$(arg resize_x)" />
 		<arg name="resize_y" value="$(arg resize_y)" />
 		<arg name="show_step_times" value="$(arg show_step_times)" />
+	-->
 
-		<arg name="low_contour_area" value="$(arg low_contour_area)" />
-		<arg name="high_contour_area" value="$(arg high_contour_area)" /-->
+	</include>
+
+	<include file="$(find victoria_perception)/launch/kmeans_service.launch">
 	</include>
 
 	<include if="$(arg doStrategy)" file="$(find victoria_navigation)/launch/robo_magellan.launch">
 	  	<arg name="doDebug" value="$(arg doDebug)" />
 	  	<arg name="cone_area_for_bumper_hit" value="$(arg cone_area_for_bumper_hit)" />
 	  	<arg name="equate_size_to_bumper_hit" value="$(arg equate_size_to_bumper_hit)" />
+	  	<arg name="field_of_view_degrees" value="$(arg field_of_view_degrees)" />
+	  	<arg name="gps_close_distance_meters" value="$(arg gps_close_distance_meters)" />
+	  	<arg name="ignore_cone_until_within_meters" value="$(arg ignore_cone_until_within_meters)" />
+  		<arg name="image_topic_name" value="$(arg image_topic_name)" />
+	  	<arg name="linear_move_meters_per_sec" value="$(arg linear_move_meters_per_sec)" />
 	  	<arg name="solve_using_odom" value="$(arg solve_using_odom)" />
 	  	<arg name="use_imu" value="$(arg use_imu)" />
+	  	<arg name="waypoint_yaml_path" value="$(find victoria_navigation)/$(arg waypoint_yaml_path)" />
 		<!--
 	  	<arg name="cmd_vel_topic_name" value="$(arg cmd_vel_topic_name)" />
 	  	<arg name="cone_detector_topic_name" value="$(arg cone_detector_topic_name)" />
 	  	<arg name="do_debug_strategy" value="$(arg do_debug_strategy)" />
 	  	<arg name="fix_topic_name" value="$(arg fix_topic_name)" />
-	  	<arg name="gps_close_distance_meters" value="$(arg gps_close_distance_meters)" />
 	  	<arg name="imu_topic_name" value="$(arg imu_topic_name)" />
-	  	<arg name="linear_move_meters_per_sec" value="$(arg linear_move_meters_per_sec)" />
 	  	<arg name="magnetic_declination" value="$(arg magnetic_declination)" />
 	  	<arg name="odometry_topic_name" value="$(arg odometry_topic_name)" />
-	  	<arg name="waypoint_yaml_path" value="$(find victoria_navigation)/$(arg waypoint_yaml_path)" />
 	  	<arg name="yaw_turn_radians_per_sec" value="$(arg yaw_turn_radians_per_sec)" /-->
 	</include>
 
