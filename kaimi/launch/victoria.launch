@@ -1,5 +1,7 @@
 <launch>
 	<arg name="doDebug" default="false" />
+	<arg if="$(arg doDebug)" name="launchPrefix" value="xterm -e gdb -args" />
+	<arg unless="$(arg doDebug)" name="launchPrefix" value="" />
 
 	<arg name="doConeDetector" default="true" doc="Enable the cone detector" />
 	<arg name="doGps" default="true" doc="Enable the GPS?" />
@@ -111,8 +113,11 @@
 
 	</include>
 
-	<include file="$(find victoria_perception)/launch/kmeans_service.launch">
-	</include>
+	<include file="$(find victoria_navigation)/launch/kmeans_for_cone_action_node.launch" />
+
+	<node pkg="victoria_perception" name="kmeans_action" type="kmeans_action_node" respawn="true" output="screen" />
+
+	<include file="$(find victoria_web)/launch/victoria_robot.launch" />
 
 	<include if="$(arg doStrategy)" file="$(find victoria_navigation)/launch/robo_magellan.launch">
 	  	<arg name="doDebug" value="$(arg doDebug)" />
