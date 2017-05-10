@@ -8,6 +8,9 @@
 	<arg name="doImu" default="true" doc="Enable the IMU node" />
 	<arg name="doMotor" default="true" doc="Enable the motors?" />
 	<arg name="doStrategy" default="true" doc="Enable the strategy module" />
+	<arg name="useStillImage" default="false" doc="false=>use usb_cam, true=> use publish_image" />
+
+	<arg name="image_path" default="$(find victoria_perception)/test/8foot_cone.jpg" doc="Used when useStillImage is true" />
 
 	<!-- BEGIN cone_detector parameters -->
 	<arg name="camera_name" default="primesense_camera" doc="Name of camera, to get properties" />
@@ -66,7 +69,7 @@
 
 	<node if="$(arg doImu)" pkg="tf" type="static_transform_publisher" name="imu_base_link_tf"  respawn="true" args="0 0 0 0 0 -1.570796326794897 imu base_link 100" />
 
-	<node name="usb_cam" pkg="usb_cam" type="usb_cam_node" output="screen" >
+	<node unless="$(arg useStillImage)" name="usb_cam" pkg="usb_cam" type="usb_cam_node" output="screen" >
       	<param name="video_device" value="/dev/video0" />
 		<param name="image_width" value="640" />
 		<param name="image_height" value="480" />
@@ -75,6 +78,10 @@
 		<param name="io_method" value="mmap"/>
 		<param name="framerate" value="30" />
 	</node>
+	<include if="$(arg useStillImage)" file="$(find victoria_perception)/launch/publish_image.launch">
+		<arg name="image_topic_name" value="$(arg image_topic_name)" />
+		<arg name="image_path" value="$(arg image_path)" />
+	</include>
 
 	<node if="$(arg doMotor)" pkg="farryn_controller" name="motor_controller_node" type="farryn_controller_node" respawn="true" output="screen">
         <rosparam command="load" file="$(find farryn_controller)/cfg/farryn_controller.yaml"/>

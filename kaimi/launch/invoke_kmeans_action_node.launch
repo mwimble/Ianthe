@@ -12,7 +12,12 @@
 		<param name="io_method" value="mmap"/>
 		<param name="framerate" value="30" />
 	</node>
-
+	<!--arg name="image_topic_name" default="/usb_cam/image_raw" doc="camera topic name" />
+	<arg name="image_path" default ="/home/wimble/catkin_ws/src/victoria_perception/test/test_raster.jpg" />
+	<node pkg="victoria_perception" name="publish_image" type="publish_image_node" respawn="false" output="screen" >
+		<param name="image_topic_name" value="$(arg image_topic_name)" type="str" />
+		<param name="image_path" value="$(arg image_path)" type="str" />
+	</node-->
 	<node pkg="victoria_perception" name="kmeans_action_node" type="kmeans_action_node" respawn="true" output="screen" launch-prefix="$(arg launchPrefix)" />
 
 	<node pkg="victoria_perception" name="invoke_kmeans_action_node" type="invoke_kmeans_action_node" output="screen" />
